@@ -13,7 +13,8 @@
 		"channel-to-chat": ["tab", "escape"],
 		"channel-to-text": ["enter"],
 		"exit-window": ["escape"],
-		"new-channel": ["="],
+		"add-channel": ["="],
+		"remove-channel": ["-"],
 		"enter-text": ["enter"]
 	}
 }
