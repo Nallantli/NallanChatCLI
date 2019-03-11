@@ -237,12 +237,21 @@ newchannel.key(keybinds["exit-window"], function(ch, key) {
 });
 
 newchannel.key("enter", function(ch, key) {
-	channelbox.focus();
-	scroller = channel_list.push(newchannel.getContent()) - 1;
-	channelbox.pushItem(newchannel.getContent());
-	screen.remove(newchannel);
-	newchannel.clearValue();
-	refreshChat();
+	if(newchannel.getContent().length > 0)
+	{
+		channelbox.focus();
+		scroller = channel_list.push(newchannel.getContent()) - 1;
+		channelbox.pushItem(newchannel.getContent());
+		screen.remove(newchannel);
+		newchannel.clearValue();
+		refreshChat();
+	}
+	else
+	{
+		screen.remove(newchannel);
+		newchannel.clearValue();
+		channelbox.focus();
+	}
 });
 
 textstuff.key(keybinds["exit-window"], function(ch, key) {
