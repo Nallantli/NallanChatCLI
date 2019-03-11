@@ -268,8 +268,9 @@ channelbox.key(keybinds["add-channel"], function(key) {
 
 channelbox.key(keybinds["remove-channel"], function(key) {
 	filedata.channels.splice(scroller, 1);
+	channel_name_list.splice(scroller, 1);
 	if (scroller > 0) scroller--;
-	//refreshChat();
+	refreshBuffer();
 });
 
 newchannel.key(keybinds["exit-window"], function(ch, key) {
@@ -282,11 +283,15 @@ newchannel.key(keybinds["exit-window"], function(ch, key) {
 newchannel.key("enter", function(ch, key) {
 	if (newchannel.getContent().length > 0) {
 		channelbox.focus();
-		scroller = filedata.channels.push(newchannel.getContent()) - 1;
-		channelbox.pushItem(newchannel.getContent());
+		scroller = filedata.channels.length;
+		filedata.channels.push({
+			"name" : newchannel.getContent()
+		});
+		channel_name_list.push(newchannel.getContent());
 		screen.remove(newchannel);
+		refreshBuffer();
+		channelbox.select(scroller);
 		newchannel.clearValue();
-		//refreshChat();
 	} else {
 		screen.remove(newchannel);
 		newchannel.clearValue();
