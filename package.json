@@ -1,0 +1,20 @@
+{
+  "license": "UNLICENSED",
+  "name": "yamachatclient",
+  "version": "1.0.0",
+  "description": "Client for chat.yamajac.com in CLI",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "chat",
+    "cli"
+  ],
+  "dependencies": {
+    "blessed": "*",
+    "request": "*",
+    "xml-js": "*"
+  },
+  "author": "Aggy"
+}
