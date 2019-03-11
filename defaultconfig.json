@@ -1,13 +1,16 @@
 {
-	"userdata": 
-	{
+	"userdata": {
 		"user": "NULL",
 		"password": "password",
 		"colour": "ffffff"
 	},
-	"channels": ["main"],
-	"keybinds": 
-	{
+	"channels": [
+		{
+			"name": "main",
+			"encrypt": false
+		}
+	],
+	"keybinds": {
 		"quit": ["C-c"],
 		"scroll-up": ["q", "up"],
 		"scroll-down": ["e", "down"],
