@@ -2,6 +2,23 @@
 var request = require("request");
 var convert = require("xml-js");
 
+const homedir = require('os').homedir() + "//";
+
+var fs = require('fs');
+var datadir = homedir + ".yccdata";
+
+console.log(datadir);
+
+if (!fs.existsSync(datadir)){
+	fs.mkdirSync(datadir);
+}
+if (!fs.existsSync(datadir + "//config.json"))
+fs.writeFile(datadir + "//config.json", "Hey there!", function(err) {
+	if(err) {
+		return console.log(err);
+	}
+});
+
 var channel = "main";
 var username = "Nallantli";
 var password = "password";
