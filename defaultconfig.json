@@ -1,16 +1,18 @@
 {
-	"userdata": {
+	"userdata": 
+	{
 		"user": "NULL",
 		"password": "password",
 		"colour": "ffffff"
 	},
 	"channels": ["main"],
-	"keybinds": {
+	"keybinds": 
+	{
 		"quit": ["C-c"],
-		"scroll-up": ["q"],
-		"scroll-down": ["e"],
-		"chat-to-channel": ["tab", "escape"],
-		"channel-to-chat": ["tab", "escape"],
+		"scroll-up": ["q", "up"],
+		"scroll-down": ["e", "down"],
+		"chat-to-channel": ["tab", "escape", "right", "left"],
+		"channel-to-chat": ["tab", "escape", "right", "left"],
 		"channel-to-text": ["enter"],
 		"exit-window": ["escape"],
 		"add-channel": ["="],
