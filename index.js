@@ -220,6 +220,10 @@ channelbox.key(keybinds["channel-to-chat"], function(key) {
 	chatbox.focus();
 });
 
+channelbox.key(keybinds["channel-to-text"], function(key) {
+	textstuff.focus();
+});
+
 channelbox.key(keybinds["new-channel"], function(key) {
 	screen.append(newchannel);
 	newchannel.focus();

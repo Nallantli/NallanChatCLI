@@ -10,7 +10,8 @@
 		"scroll-up": ["q"],
 		"scroll-down": ["e"],
 		"chat-to-channel": ["tab", "escape"],
-		"channel-to-chat": ["tab", "enter", "escape"],
+		"channel-to-chat": ["tab", "escape"],
+		"channel-to-text": ["enter"],
 		"exit-window": ["escape"],
 		"new-channel": ["="],
 		"enter-text": ["enter"]
