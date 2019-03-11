@@ -1,29 +1,28 @@
 ﻿var blessed = require("blessed");
 var request = require("request");
 var convert = require("xml-js");
+var fs = require("fs");
 
-const homedir = require('os').homedir() + "//";
+const homedir = require("os").homedir() + "\\";
 
-var fs = require('fs');
 var datadir = homedir + ".yccdata";
 
-console.log(datadir);
-
-if (!fs.existsSync(datadir)){
+if (!fs.existsSync(datadir)) {
 	fs.mkdirSync(datadir);
 }
-if (!fs.existsSync(datadir + "//config.json"))
-fs.writeFile(datadir + "//config.json", "Hey there!", function(err) {
-	if(err) {
-		return console.log(err);
-	}
-});
-
-var channel = "main";
-var username = "Nallantli";
-var password = "password";
-var color = "0000ff";
-var channel_list = ["main", "rainmeter", "new-private"];
+if (!fs.existsSync(datadir + "\\config.json")) {
+	var def = fs.readFileSync("defaultconfig.json", 'utf8');
+	fs.writeFileSync(datadir + "\\config.json", def, function(err) {
+		if (err) {
+			return console.log(err);
+		}
+	});
+}
+var filedata = JSON.parse(fs.readFileSync(datadir + "\\config.json", 'utf8'));
+var userdata = filedata.userdata;
+var channel_list = filedata.channels;
+var keybinds = filedata.keybinds;
+var channel = channel_list[0];
 
 var screen = blessed.screen({
 	smartCSR: true
@@ -217,16 +216,16 @@ screen.append(chatbox);
 screen.append(channelbox);
 screen.append(textstuff);
 
-channelbox.key(["tab", "enter", "escape"], function(key) {
+channelbox.key(keybinds["channel-to-chat"], function(key) {
 	chatbox.focus();
 });
 
-channelbox.key("=", function(key) {
+channelbox.key(keybinds["new-channel"], function(key) {
 	screen.append(newchannel);
 	newchannel.focus();
 });
 
-newchannel.key("escape", function(ch, key) {
+newchannel.key(keybinds["exit-window"], function(ch, key) {
 	channelbox.focus();
 	screen.remove(newchannel);
 	newchannel.clearValue();
@@ -242,27 +241,27 @@ newchannel.key("enter", function(ch, key) {
 	refreshChat();
 });
 
-textstuff.key("escape", function(ch, key) {
+textstuff.key(keybinds["exit-window"], function(ch, key) {
 	chatbox.focus();
 });
 
-chatbox.key(["tab", "escape"], function(ch, key) {
+chatbox.key(keybinds["chat-to-channel"], function(ch, key) {
 	channelbox.focus();
 });
 
-chatbox.key("enter", function(ch, key) {
+chatbox.key(keybinds["enter-text"], function(ch, key) {
 	if (sending == false) textstuff.focus();
 });
 
-chatbox.key("q", function(ch, key) {
+chatbox.key(keybinds["scroll-up"], function(ch, key) {
 	chatbox.scroll(-1);
 });
 
-chatbox.key("e", function(ch, key) {
+chatbox.key(keybinds["scroll-down"], function(ch, key) {
 	chatbox.scroll(1);
 });
 
-channelbox.key("q", function(ch, key) {
+channelbox.key(keybinds["scroll-up"], function(ch, key) {
 	if (scroller > 0) {
 		scroller--;
 		//channel = channel_list[scroller];
@@ -270,7 +269,7 @@ channelbox.key("q", function(ch, key) {
 	}
 });
 
-channelbox.key("e", function(ch, key) {
+channelbox.key(keybinds["scroll-down"], function(ch, key) {
 	if (scroller < channel_list.length - 1) {
 		scroller++;
 		//channel = channel_list[scroller];
@@ -287,11 +286,7 @@ textstuff.key("enter", function(ch, key) {
 		screen.render();
 		request(
 			{
-				headers: {
-					user: username,
-					password: password,
-					colour: color
-				},
+				headers: userdata,
 				uri:
 					"http://chat.yamajac.com/" +
 					channel +
@@ -309,7 +304,7 @@ textstuff.key("enter", function(ch, key) {
 	}
 });
 
-screen.key("C-c", function(ch, key) {
+screen.key(keybinds["quit"], function(ch, key) {
 	clearInterval(run);
 	return process.exit(0);
 });

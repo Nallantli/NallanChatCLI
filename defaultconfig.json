@@ -1,0 +1,18 @@
+{
+	"userdata": {
+		"user": "NULL",
+		"password": "password",
+		"colour": "ffffff"
+	},
+	"channels": ["main"],
+	"keybinds": {
+		"quit": ["C-c"],
+		"scroll-up": ["q"],
+		"scroll-down": ["e"],
+		"chat-to-channel": ["tab", "escape"],
+		"channel-to-chat": ["tab", "enter", "escape"],
+		"exit-window": ["escape"],
+		"new-channel": ["="],
+		"enter-text": ["enter"]
+	}
+}

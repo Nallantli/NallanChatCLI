@@ -14,7 +14,9 @@
   "dependencies": {
     "blessed": "*",
     "request": "*",
-    "xml-js": "*"
+    "xml-js": "*",
+    "fs": "*",
+    "os": "*"
   },
   "author": "Aggy"
 }
