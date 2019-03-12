@@ -448,7 +448,7 @@ textstuff.key("enter", function(ch, key) {
 		request(
 			{
 				headers: {
-					name: encodeURIComponent(filedata.userdata.name),
+					user: encodeURIComponent(filedata.userdata.user),
 					password: filedata.userdata.password,
 					colour: filedata.userdata.colour
 				},
@@ -552,7 +552,7 @@ function refreshChat(channel_full) {
 								? "white"
 								: "#" + json["div"]["_attributes"]["data-colour"]) +
 							"-fg}" +
-							json["div"]["_attributes"]["data-username"] +
+							decodeURIComponent(json["div"]["_attributes"]["data-username"]) +
 							" {/}" +
 							mess
 					);
