@@ -1,9 +1,9 @@
-﻿var blessed = require("neo-blessed");
-var request = require("request");
-var convert = require("xml-js");
-var crypto = require("crypto");
-var fs = require("fs");
-var homedir = require("os").homedir() + "\\";
+﻿const blessed = require("neo-blessed");
+const request = require("request");
+const convert = require("xml-js");
+const crypto = require("crypto");
+const fs = require("fs");
+const homedir = require("os").homedir() + "\\";
 
 const _key = Buffer.alloc(32); // key should be 32 bytes
 const _iv = Buffer.alloc(16); // iv should be 16
