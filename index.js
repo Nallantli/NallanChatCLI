@@ -452,7 +452,7 @@ textstuff.key("enter", function(ch, key) {
 					filedata["base-url"] +
 					filedata.channels[scroller].name +
 					"/send/" +
-					encodeURI(message),
+					encodeURIComponent(message),
 				method: "POST",
 				agent: false,
 				pool: {
@@ -509,7 +509,7 @@ function refreshChat(channel_full) {
 				maxSockets: Infinity
 			},
 			json: false,
-			timeout: 1000,
+			timeout: 500,
 			agent: false
 		},
 		(err, res, html) => {
