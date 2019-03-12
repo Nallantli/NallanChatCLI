@@ -2,7 +2,7 @@
 	"userdata": {
 		"user": "NULL",
 		"password": "password",
-		"colour": "ffffff"
+		"colour": "#ffffff"
 	},
 	"channels": [
 		{
@@ -17,9 +17,11 @@
 		"chat-to-channel": ["tab", "escape", "right", "left"],
 		"channel-to-chat": ["tab", "escape", "right", "left"],
 		"channel-to-text": ["enter"],
+		"scroll-all": ["escape"],
 		"exit-window": ["escape"],
 		"add-channel": ["="],
 		"remove-channel": ["-"],
 		"enter-text": ["enter"]
-	}
+	},
+	"color": { "main": "00ff00", "accent": "00ffff" }
 }
