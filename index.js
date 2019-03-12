@@ -447,10 +447,14 @@ textstuff.key("enter", function(ch, key) {
 			message = encrypt(message, filedata.channels[scroller].key);
 		request(
 			{
-				headers: filedata.userdata,
+				headers: {
+					name: encodeURIComponent(filedata.userdata.name),
+					password: filedata.userdata.password,
+					colour: filedata.userdata.colour
+				},
 				uri:
 					filedata["base-url"] +
-					filedata.channels[scroller].name +
+					encodeURIComponent(filedata.channels[scroller].name) +
 					"/send/" +
 					encodeURIComponent(message),
 				method: "POST",
@@ -458,7 +462,7 @@ textstuff.key("enter", function(ch, key) {
 				pool: {
 					maxSockets: Infinity
 				},
-				timeout: 1000
+				timeout: 500
 			},
 			function(err, res, html) {
 				textstuff.clearValue();
