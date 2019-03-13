@@ -1,6 +1,6 @@
 {
 	"name": "nallanchat",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"description": "Node.js",
 	"main": "index.js",
 	"bin": {
@@ -8,8 +8,7 @@
 	},
 	"dependencies": {
 		"neo-blessed": "*",
-		"request": "*",
-		"xml-js": "*"
+		"request": "*"
 	},
 	"devDependencies": {},
 	"scripts": {
