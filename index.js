@@ -5,6 +5,29 @@ const fs = require("fs");
 const crypto = require("crypto");
 const homedir = require("os").homedir() + "\\";
 
+const defaultconfig = {
+	"channels": [
+		{
+			"name": "main"
+		}
+	],
+	"keybinds": {
+		"quit": ["C-c"],
+		"scroll-up": ["q", "up"],
+		"scroll-down": ["e", "down"],
+		"chat-to-channel": ["tab", "right", "left"],
+		"channel-to-chat": ["tab", "escape", "right", "left"],
+		"channel-to-text": ["enter"],
+		"scroll-all": ["escape"],
+		"exit-window": ["escape"],
+		"add-channel": ["="],
+		"remove-channel": ["-"],
+		"enter-text": ["enter"]
+	},
+	"color": { "main": "#00ff00", "accent": "#00ffff" },
+	"base-url": "http://157.230.208.158:3000"
+};
+
 const _key = Buffer.alloc(32); // key should be 32 bytes
 const _iv = Buffer.alloc(16); // iv should be 16
 
@@ -14,17 +37,11 @@ var datadir = homedir + ".yccdata";
 if (!fs.existsSync(datadir)) {
 	fs.mkdirSync(datadir);
 }
-if (!fs.existsSync(datadir + "\\config.json")) {
-	var def = fs.readFileSync("defaultconfig.json", "utf8");
-	fs.writeFileSync(datadir + "\\config.json", def, function(err) {
-		if (err) {
-			console.log(err);
-			return process.exit(0);
-		}
-	});
-}
 
-var filedata = JSON.parse(fs.readFileSync(datadir + "\\config.json", "utf8"));
+var filedata = defaultconfig;
+if (fs.existsSync(datadir + "\\config.json")) {
+	filedata = JSON.parse(fs.readFileSync(datadir + "\\config.json", "utf8"));
+}
 
 for (var i = 0; i < filedata.channels.length; i++) {
 	channel_name_list.push(
@@ -619,6 +636,11 @@ function startWindows() {
 	channelbox.focus();
 	channelbox.select(0);
 
+	run = setInterval(function() {
+		refreshChat(filedata.channels[scroller]);
+	}, 200);
+	run_buffer = setInterval(refreshBuffer, 100);
+
 	refreshChat(filedata.channels[scroller], () => {
 		refreshBuffer();
 		chatbox.setScroll(Infinity);
@@ -848,11 +870,6 @@ function startClient() {
 			chatbox.focus();
 		}
 	});
-
-	run = setInterval(function() {
-		refreshChat(filedata.channels[scroller]);
-	}, 200);
-	run_buffer = setInterval(refreshBuffer, 100);
 }
 
 startClient();
