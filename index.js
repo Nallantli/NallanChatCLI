@@ -1,13 +1,12 @@
 const blessed = require("neo-blessed");
 const request = require("request");
+const convert = require("xml-js");
 const fs = require("fs");
 const crypto = require("crypto");
 const homedir = require("os").homedir() + "\\";
 
 const _key = Buffer.alloc(32); // key should be 32 bytes
 const _iv = Buffer.alloc(16); // iv should be 16
-
-const serverurl = "http://157.230.208.158:3000";
 
 var channel_name_list = [];
 
@@ -28,7 +27,10 @@ if (!fs.existsSync(datadir + "\\config.json")) {
 var filedata = JSON.parse(fs.readFileSync(datadir + "\\config.json", "utf8"));
 
 for (var i = 0; i < filedata.channels.length; i++) {
-	channel_name_list.push(filedata.channels[i].name);
+	channel_name_list.push(
+		filedata.channels[i].name +
+			(filedata.channels[i].mode == "yamachat" ? "@yamac" : "")
+	);
 }
 var old_channel = "";
 var scroller = 0;
@@ -173,6 +175,7 @@ var enter_url = blessed.textbox({
 	width: "50%",
 	height: 3,
 	tags: true,
+	content: "http://157.230.208.158:3000",
 	inputOnFocus: true,
 	keys: false,
 	border: {
@@ -387,61 +390,140 @@ function refreshBuffer() {
 			(filedata.channels[scroller].key != undefined ? " : ENCRYPTED" : "") +
 			" {/}"
 	);
-	chatbox.setContent(buffer[filedata.channels[scroller].name]);
+	chatbox.setContent(
+		buffer[
+			filedata.channels[scroller].name +
+				(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
+		]
+	);
 	if (
-		buffer[filedata.channels[scroller].name] === undefined ||
-		old_channel != filedata.channels[scroller].name
+		buffer[
+			filedata.channels[scroller].name +
+				(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
+		] === undefined ||
+		old_channel !=
+			filedata.channels[scroller].name +
+				(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
 	) {
 		chatbox.setScroll(Infinity);
 	}
 
-	if (chatbox.getScrollHeight() < chatbox.height)
-		chatbox.setScroll(0);
-	old_channel = filedata.channels[scroller].name;
+	if (chatbox.getScrollHeight() < chatbox.height) chatbox.setScroll(0);
+	old_channel =
+		filedata.channels[scroller].name +
+		(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "");
 	screen.render();
 }
 
-function sendMessage(user, channel, content, callback) {
-	request(
-		{
-			uri: serverurl + "/send",
-			headers: {
-				user: encodeURIComponent(user.user),
-				password: user.password,
-				content: encodeURIComponent(content),
-				color: user.color,
-				channel: encodeURIComponent(channel)
+function sendMessage(user, channel, yama, content, callback) {
+	if (!yama) {
+		request(
+			{
+				uri: filedata["base-url"] + "/send",
+				headers: {
+					user: encodeURIComponent(user.user),
+					password: user.password,
+					content: encodeURIComponent(content),
+					color: user.color,
+					channel: encodeURIComponent(channel)
+				},
+				agent: false,
+				pool: {
+					maxSockets: Infinity
+				}
 			},
-			agent: false,
-			pool: {
-				maxSockets: Infinity
+			(err, req, res) => {
+				if (err) throw err;
+				callback(res);
 			}
-		},
-		(err, req, res) => {
-			if (err) throw err;
-			callback(res);
-		}
-	);
+		);
+	} else {
+		request(
+			{
+				headers: {
+					user: encodeURIComponent(user.user),
+					password: user.password,
+					colour: user.color.substr(1)
+				},
+				uri:
+					filedata["yama-url"] +
+					encodeURIComponent(filedata.channels[scroller].name) +
+					"/send/" +
+					encodeURIComponent(content),
+				method: "POST",
+				agent: false,
+				pool: {
+					maxSockets: Infinity
+				},
+				timeout: 500
+			},
+			(err, req, res) => {
+				if (err) throw err;
+				callback(res);
+			}
+		);
+	}
 }
 
-function getMessages(channel, callback) {
-	request(
-		{
-			uri: serverurl + "/read",
-			headers: {
-				channel: channel,
-				count: 100
+function getMessages(channel_full, callback) {
+	var channel = channel_full.name;
+	if (channel_full.mode == undefined) {
+		request(
+			{
+				uri: filedata["base-url"] + "/read",
+				headers: {
+					channel: channel,
+					count: 100
+				},
+				agent: false,
+				pool: {
+					maxSockets: Infinity
+				}
 			},
-			agent: false,
-			pool: {
-				maxSockets: Infinity
+			(err, req, res) => {
+				if (err) throw err;
+				callback(res);
 			}
-		},
-		(err, req, res) => {
-			if (err) throw err;
-			callback(res);
-		}
-	);
+		);
+	} else {
+		request(
+			{
+				uri: filedata["yama-url"] + channel + "/read",
+				pool: {
+					maxSockets: Infinity
+				},
+				json: false,
+				timeout: 500,
+				agent: false
+			},
+			(err, res, html) => {
+				if (err) throw err;
+				if (html !== undefined) {
+					body_edit = html.split("\r\n");
+					s = [];
+					var prev = "";
+					for (var i = 0; i < body_edit.length - 1; i++) {
+						try {
+							json = JSON.parse(
+								convert.xml2json(body_edit[i], { compact: true, spaces: 4 })
+							);
+						} catch {
+							throw body_edit[i];
+						}
+						s.push({
+							user: {
+								user: json["div"]["_attributes"]["data-username"],
+								color: "#" + json["div"]["_attributes"]["data-colour"]
+							},
+							content: json.div._text,
+							timestamp: json["div"]["_attributes"]["data-timestamp"]
+						});
+					}
+					callback(JSON.stringify(s));
+				}
+			}
+		);
+	}
 }
 
 function timeConverter(UNIX_timestamp) {
@@ -478,9 +560,16 @@ function timeConverter(UNIX_timestamp) {
 	return time;
 }
 
+var count = 0;
 function refreshChat(channel_full, callback) {
+	count++;
+	if (channel_full.mode == "yamachat" && count < 10) {
+		if (callback) callback();
+		return;
+	}
+	count = 0;
 	var channel = channel_full.name;
-	getMessages(channel, res => {
+	getMessages(channel_full, res => {
 		var s = [];
 		res = JSON.parse(res);
 		res = res.reverse();
@@ -505,7 +594,7 @@ function refreshChat(channel_full, callback) {
 			);
 		}
 		text = s.join("\n");
-		buffer[channel] = text;
+		buffer[channel + (channel_full.mode == "yamachat" ? ".yc" : "")] = text;
 		if (callback) callback();
 	});
 }
@@ -741,6 +830,7 @@ function startClient() {
 			sendMessage(
 				filedata.userdata,
 				filedata.channels[scroller].name,
+				filedata.channels[scroller].mode == "yamachat",
 				message,
 				res => {
 					textstuff.clearValue();

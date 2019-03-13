@@ -8,7 +8,8 @@
 	},
 	"dependencies": {
 		"neo-blessed": "*",
-		"request": "*"
+		"request": "*",
+		"xml-js": "^1.6.11"
 	},
 	"devDependencies": {},
 	"scripts": {
