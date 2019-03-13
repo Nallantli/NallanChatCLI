@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const blessed = require("neo-blessed");
 const request = require("request");
 const convert = require("xml-js");
