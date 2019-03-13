@@ -8,13 +8,13 @@ const crypto = require("crypto");
 const homedir = require("os").homedir() + "\\";
 
 const defaultconfig = {
-	"channels": [
+	channels: [
 		{
-			"name": "main"
+			name: "main"
 		}
 	],
-	"keybinds": {
-		"quit": ["C-c"],
+	keybinds: {
+		quit: ["C-c"],
 		"scroll-up": ["q", "up"],
 		"scroll-down": ["e", "down"],
 		"chat-to-channel": ["tab", "right", "left"],
@@ -26,7 +26,7 @@ const defaultconfig = {
 		"remove-channel": ["-"],
 		"enter-text": ["enter"]
 	},
-	"color": { "main": "#00ff00", "accent": "#00ffff" },
+	color: { main: "#00ff00", accent: "#00ffff" },
 	"base-url": "http://157.230.208.158:3000"
 };
 
@@ -77,9 +77,16 @@ function decrypt(text, key) {
 
 const screen = blessed.screen({
 	title: "NallanChat CLI",
-	smartCSR: true,
-	fullUnicode: true
+	smartCSR : true,
+	fullUnicode: true,
+	cursor: {
+		artificial: true,
+		shape: "line",
+		blink: true,
+		color: null // null for default
+	}
 });
+
 
 var chatbox = blessed.box({
 	scrollable: true,
@@ -346,6 +353,7 @@ var newuserpassword = blessed.textbox({
 	left: 0,
 	width: 40,
 	tags: true,
+	censor: true,
 	height: 3,
 	inputOnFocus: true,
 	border: {
@@ -449,7 +457,8 @@ function sendMessage(user, channel, yama, content, callback) {
 				agent: false,
 				pool: {
 					maxSockets: Infinity
-				}
+				},
+				method: "GET"
 			},
 			(err, req, res) => {
 				if (err) throw err;
@@ -474,7 +483,8 @@ function sendMessage(user, channel, yama, content, callback) {
 				pool: {
 					maxSockets: Infinity
 				},
-				timeout: 500
+				timeout: 500,
+				method: "GET"
 			},
 			(err, req, res) => {
 				if (err) throw err;
@@ -497,7 +507,8 @@ function getMessages(channel_full, callback) {
 				agent: false,
 				pool: {
 					maxSockets: Infinity
-				}
+				},
+				method: "GET"
 			},
 			(err, req, res) => {
 				if (err) throw err;
@@ -512,11 +523,13 @@ function getMessages(channel_full, callback) {
 					maxSockets: Infinity
 				},
 				json: false,
-				timeout: 500,
+				timeout: 1000,
 				agent: false
 			},
 			(err, res, html) => {
-				if (err) throw err;
+				if (err) {
+					/*todo*/
+				}
 				if (html !== undefined) {
 					body_edit = html.split("\r\n");
 					s = [];
@@ -581,8 +594,8 @@ function timeConverter(UNIX_timestamp) {
 
 var count = 0;
 function refreshChat(channel_full, callback) {
-	count++;
-	if (channel_full.mode == "yamachat" && count < 10) {
+	if (channel_full.mode == "yamachat" && count < 5) {
+		count++;
 		if (callback) callback();
 		return;
 	}
@@ -640,8 +653,8 @@ function startWindows() {
 
 	run = setInterval(function() {
 		refreshChat(filedata.channels[scroller]);
-	}, 200);
-	run_buffer = setInterval(refreshBuffer, 100);
+	}, 500);
+	run_buffer = setInterval(refreshBuffer, 200);
 
 	refreshChat(filedata.channels[scroller], () => {
 		refreshBuffer();
@@ -662,7 +675,7 @@ function startClient() {
 		clearInterval(run_buffer);
 		fs.writeFileSync(
 			datadir + "\\config.json",
-			JSON.stringify(filedata),
+			JSON.stringify(filedata, null, "\t"),
 			function(err) {
 				if (err) {
 					console.log(err);
