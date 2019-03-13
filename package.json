@@ -17,10 +17,13 @@
     "type": "git",
     "url": "git+https://github.com/Agilulfulus/NallanChatCLI.git"
   },
-  "author": "",
+  "author": "nallantli",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Agilulfulus/YamaChatClientCLI/issues"
+    "url": "https://github.com/Agilulfulus/NallanChatCLI/issues"
   },
-  "homepage": "https://github.com/Agilulfulus/YamaChatClientCLI#readme"
+  "homepage": "https://github.com/Agilulfulus/NallanChatCLI#readme",
+  "keywords": [
+    "cli"
+  ]
 }
