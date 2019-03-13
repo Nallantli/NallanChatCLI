@@ -120,9 +120,6 @@ var chatbox = blessed.box({
 		bg: "black",
 		border: {
 			fg: "white"
-		},
-		hover: {
-			bg: filedata.color.main
 		}
 	}
 });
