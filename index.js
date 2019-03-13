@@ -10,7 +10,6 @@ const _iv = Buffer.alloc(16); // iv should be 16
 const serverurl = "http://157.230.208.158:3000";
 
 var channel_name_list = [];
-var last_channel = "";
 
 var datadir = homedir + ".yccdata";
 if (!fs.existsSync(datadir)) {
@@ -338,24 +337,69 @@ function getMessages(channel, callback) {
 	);
 }
 
-function refreshChat(channel_full) {
+function timeConverter(UNIX_timestamp) {
+	var a = new Date(UNIX_timestamp);
+	var months = [
+		"Jan",
+		"Feb",
+		"Mar",
+		"Apr",
+		"May",
+		"Jun",
+		"Jul",
+		"Aug",
+		"Sep",
+		"Oct",
+		"Nov",
+		"Dec"
+	];
+	var year = a.getFullYear();
+	var month = months[a.getMonth()];
+	var date = a.getDate();
+	var hour = a.getHours();
+	var min = a.getMinutes();
+	var sec = a.getSeconds();
+	var time = {
+		day: date + " " + month + " " + year,
+		time:
+			(hour < 10 ? "0" + hour : hour) +
+			":" +
+			(min < 10 ? "0" + min : min) +
+			":" +
+			(sec < 10 ? "0" + sec : sec)
+	};
+	return time;
+}
+
+function refreshChat(channel_full, callback) {
 	var channel = channel_full.name;
 	getMessages(channel, res => {
-		var s = "";
+		var s = [];
 		res = JSON.parse(res);
+		res = res.reverse();
+		var prev = "";
 		for (var i = 0; i < res.length; i++) {
-			s +=
-				"{" +
-				res[i].user.color +
-				"-fg}" +
-				decodeURIComponent(res[i].user.user) +
-				"{/} " +
-				(channel_full.key == undefined
-					? decodeURIComponent(res[i].content)
-					: decrypt(decodeURIComponent(res[i].content), channel_full.key)) +
-				"\n";
+			time_full = timeConverter(res[i].timestamp);
+			if (prev != time_full.day) {
+				prev = time_full.day;
+				s.push("{" + filedata.color.main + "-fg}{underline}{bold}\t" + prev);
+			}
+			s.push(
+				"{/}" +
+					time_full.time +
+					" {" +
+					res[i].user.color +
+					"-fg}" +
+					decodeURIComponent(res[i].user.user) +
+					"{/} " +
+					(channel_full.key == undefined
+						? decodeURIComponent(res[i].content)
+						: decrypt(decodeURIComponent(res[i].content), channel_full.key))
+			);
 		}
-		buffer[channel] = s;
+		text = s.join("\n");
+		buffer[channel] = text;
+		if (callback) callback();
 	});
 }
 
@@ -538,6 +582,7 @@ function startClient() {
 					textstuff.clearValue();
 					sending = false;
 					textstuff.style.bg = "black";
+					chatbox.setScroll(Infinity);
 					refreshChat(filedata.channels[scroller], refreshBuffer);
 				}
 			);
@@ -548,6 +593,11 @@ function startClient() {
 		refreshChat(filedata.channels[scroller]);
 	}, 200);
 	run_buffer = setInterval(refreshBuffer, 100);
+
+	refreshChat(filedata.channels[scroller], () => {
+		refreshBuffer();
+		chatbox.setScroll(Infinity);
+	});
 }
 
 startClient();
