@@ -8,7 +8,7 @@
 		"quit": ["C-c"],
 		"scroll-up": ["q", "up"],
 		"scroll-down": ["e", "down"],
-		"chat-to-channel": ["tab", "escape", "right", "left"],
+		"chat-to-channel": ["tab", "right", "left"],
 		"channel-to-chat": ["tab", "escape", "right", "left"],
 		"channel-to-text": ["enter"],
 		"scroll-all": ["escape"],
@@ -17,6 +17,6 @@
 		"remove-channel": ["-"],
 		"enter-text": ["enter"]
 	},
-	"color": { "main": "00ff00", "accent": "00ffff" },
+	"color": { "main": "#00ff00", "accent": "#00ffff" },
 	"base-url": "http://157.230.208.158:3000"
 }
