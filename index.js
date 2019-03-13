@@ -847,7 +847,6 @@ function startClient() {
 			textstuff.style.bg = "red";
 			textstuff.render();
 			textstuff.inputOnFocus = false;
-			chatbox.focus();
 			var message = textstuff.getContent();
 			if (filedata.channels[scroller].key !== undefined)
 				message = encrypt(message, filedata.channels[scroller].key);
@@ -865,11 +864,12 @@ function startClient() {
 					refreshChat(filedata.channels[scroller], () => {
 						refreshBuffer();
 						chatbox.setScroll(Infinity);
+						textstuff.focus();
 					});
 				}
 			);
 		} else {
-			chatbox.focus();
+			textstuff.focus();
 		}
 	});
 }
