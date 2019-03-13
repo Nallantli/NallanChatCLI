@@ -1,13 +1,12 @@
 {
 	"name": "nallanchat",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"description": "Node.js",
 	"main": "index.js",
 	"bin": {
 		"nallanchat": "./index.js"
 	},
 	"dependencies": {
-		"mongodb": "*",
 		"neo-blessed": "*",
 		"request": "*",
 		"xml-js": "*"
