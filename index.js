@@ -5,7 +5,7 @@ const request = require("request");
 const convert = require("xml-js");
 const fs = require("fs");
 const crypto = require("crypto");
-const homedir = require("os").homedir() + "\\";
+const homedir = require("os").homedir() + "/";
 
 const defaultconfig = {
 	channels: [
@@ -41,8 +41,8 @@ if (!fs.existsSync(datadir)) {
 }
 
 var filedata = defaultconfig;
-if (fs.existsSync(datadir + "\\config.json")) {
-	filedata = JSON.parse(fs.readFileSync(datadir + "\\config.json", "utf8"));
+if (fs.existsSync(datadir + "/config.json")) {
+	filedata = JSON.parse(fs.readFileSync(datadir + "/config.json", "utf8"));
 }
 
 for (var i = 0; i < filedata.channels.length; i++) {
@@ -674,7 +674,7 @@ function startClient() {
 		clearInterval(run);
 		clearInterval(run_buffer);
 		fs.writeFileSync(
-			datadir + "\\config.json",
+			datadir + "/config.json",
 			JSON.stringify(filedata, null, "\t"),
 			function(err) {
 				if (err) {
