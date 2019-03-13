@@ -269,6 +269,110 @@ var newchannelkey = blessed.textbox({
 newchannelform.append(newchannel);
 newchannelform.append(newchannelkey);
 
+var newuserform = blessed.box({
+	label: "{bold}{" + filedata.color.accent + "-fg} Register/Login {/}",
+	top: "center",
+	left: "center",
+	tags: true,
+	width: 42,
+	height: 11,
+	border: {
+		type: "line"
+	},
+	style: {
+		focus: {
+			border: {
+				fg: filedata.color.main
+			}
+		},
+		fg: "white",
+		bg: "black",
+		border: {
+			fg: "white"
+		}
+	}
+});
+
+var newusername = blessed.textbox({
+	label: " Username ",
+	top: 0,
+	left: 0,
+	width: 40,
+	tags: true,
+	height: 3,
+	inputOnFocus: true,
+	border: {
+		type: "line"
+	},
+	style: {
+		focus: {
+			border: {
+				fg: filedata.color.main
+			}
+		},
+		fg: "white",
+		bg: "black",
+		border: {
+			fg: "white"
+		}
+	}
+});
+
+var newuserpassword = blessed.textbox({
+	label: " Password ",
+	top: 3,
+	left: 0,
+	width: 40,
+	tags: true,
+	height: 3,
+	inputOnFocus: true,
+	border: {
+		type: "line"
+	},
+	style: {
+		focus: {
+			border: {
+				fg: filedata.color.main
+			}
+		},
+		fg: "white",
+		bg: "black",
+		border: {
+			fg: "white"
+		}
+	}
+});
+
+var newusercolor = blessed.textbox({
+	label: " Color Hex ",
+	top: 6,
+	left: 0,
+	width: 40,
+	tags: true,
+	height: 3,
+	content: "ffffff",
+	inputOnFocus: true,
+	border: {
+		type: "line"
+	},
+	style: {
+		focus: {
+			border: {
+				fg: filedata.color.main
+			}
+		},
+		fg: "white",
+		bg: "black",
+		border: {
+			fg: "white"
+		}
+	}
+});
+
+newuserform.append(newusername);
+newuserform.append(newuserpassword);
+newuserform.append(newusercolor);
+
 function refreshBuffer() {
 	channelbox.setItems(channel_name_list);
 	chatbox.setLabel(
@@ -286,10 +390,13 @@ function refreshBuffer() {
 	chatbox.setContent(buffer[filedata.channels[scroller].name]);
 	if (
 		buffer[filedata.channels[scroller].name] === undefined ||
-		old_channel !== filedata.channels[scroller].name
+		old_channel != filedata.channels[scroller].name
 	) {
 		chatbox.setScroll(Infinity);
 	}
+
+	if (chatbox.getScrollHeight() < chatbox.height)
+		chatbox.setScroll(0);
 	old_channel = filedata.channels[scroller].name;
 	screen.render();
 }
@@ -407,17 +514,34 @@ var sending = false;
 var run;
 var run_buffer;
 
+function checkUser() {
+	if (filedata.userdata == undefined) {
+		screen.append(newuserform);
+		newusername.focus();
+	} else {
+		startWindows();
+	}
+}
+
+function startWindows() {
+	screen.append(chatbox);
+	screen.append(channelbox);
+	screen.append(textstuff);
+	channelbox.focus();
+	channelbox.select(0);
+
+	refreshChat(filedata.channels[scroller], () => {
+		refreshBuffer();
+		chatbox.setScroll(Infinity);
+	});
+}
+
 function startClient() {
 	if (filedata["base-url"] == undefined) {
 		screen.append(enter_url);
 		enter_url.focus();
 	} else {
-		screen.remove(enter_url);
-		screen.append(chatbox);
-		screen.append(channelbox);
-		screen.append(textstuff);
-		channelbox.focus();
-		channelbox.select(0);
+		checkUser();
 	}
 
 	screen.key(filedata.keybinds["quit"], function(ch, key) {
@@ -440,11 +564,7 @@ function startClient() {
 		if (enter_url.getContent().length > 0) {
 			filedata["base-url"] = enter_url.getContent();
 			screen.remove(enter_url);
-			screen.append(chatbox);
-			screen.append(channelbox);
-			screen.append(textstuff);
-			channelbox.focus();
-			channelbox.select(0);
+			checkUser();
 		} else {
 			return process.exit(0);
 		}
@@ -518,6 +638,48 @@ function startClient() {
 		newchannel.focus();
 	});
 
+	newusername.key(filedata.keybinds["exit-window"], function(ch, key) {
+		throw "User required.";
+	});
+
+	newuserpassword.key("escape", function(ch, key) {
+		newusername.focus();
+	});
+
+	newusercolor.key("escape", function(ch, key) {
+		newuserpassword.focus();
+	});
+
+	newusername.key(["enter"], function(ch, key) {
+		if (newusername.getContent().length > 0) {
+			newuserpassword.focus();
+		} else {
+			newusername.focus();
+		}
+	});
+
+	newuserpassword.key(["enter"], function(ch, key) {
+		if (newuserpassword.getContent().length > 0) {
+			newusercolor.focus();
+		} else {
+			newuserpassword.focus();
+		}
+	});
+
+	newusercolor.key(["enter"], function(ch, key) {
+		if (newusercolor.getContent().length == 6) {
+			screen.remove(newuserform);
+			filedata.userdata = {
+				user: newusername.getContent(),
+				password: newuserpassword.getContent(),
+				color: "#" + newusercolor.getContent()
+			};
+			startWindows();
+		} else {
+			newusercolor.focus();
+		}
+	});
+
 	newchannel.key(filedata.keybinds["exit-window"], function(ch, key) {
 		channelbox.focus();
 		screen.remove(newchannelform);
@@ -583,7 +745,10 @@ function startClient() {
 					sending = false;
 					textstuff.style.bg = "black";
 					chatbox.setScroll(Infinity);
-					refreshChat(filedata.channels[scroller], refreshBuffer);
+					refreshChat(filedata.channels[scroller], () => {
+						refreshBuffer();
+						chatbox.setScroll(Infinity);
+					});
 				}
 			);
 		}
@@ -593,11 +758,6 @@ function startClient() {
 		refreshChat(filedata.channels[scroller]);
 	}, 200);
 	run_buffer = setInterval(refreshBuffer, 100);
-
-	refreshChat(filedata.channels[scroller], () => {
-		refreshBuffer();
-		chatbox.setScroll(Infinity);
-	});
 }
 
 startClient();
