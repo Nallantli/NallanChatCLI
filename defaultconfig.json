@@ -1,13 +1,12 @@
 {
 	"userdata": {
-		"user": "NULL",
+		"user": "GUEST",
 		"password": "password",
 		"colour": "#ffffff"
 	},
 	"channels": [
 		{
-			"name": "main",
-			"encrypt": false
+			"name": "main"
 		}
 	],
 	"keybinds": {
@@ -23,5 +22,6 @@
 		"remove-channel": ["-"],
 		"enter-text": ["enter"]
 	},
-	"color": { "main": "00ff00", "accent": "00ffff" }
+	"color": { "main": "00ff00", "accent": "00ffff" },
+	"base-url" : "http://157.230.208.158:3000"
 }
