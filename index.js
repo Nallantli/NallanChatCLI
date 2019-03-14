@@ -27,7 +27,7 @@ const defaultconfig = {
 		"enter-text": ["enter"],
 		"add-history": ["+"]
 	},
-	colors: { main: "#0000ff", accent: "#00aaff", background: "#000000", foreground: "#ffffff", border: "#6666ff" },
+	colors: { main: "blue", accent: "cyan", background: "black", foreground: "white", border: "gray" },
 	"base-url": "http://157.230.208.158:3000"
 };
 
