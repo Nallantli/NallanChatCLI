@@ -24,9 +24,10 @@ const defaultconfig = {
 		"exit-window": ["escape"],
 		"add-channel": ["="],
 		"remove-channel": ["-"],
-		"enter-text": ["enter"]
+		"enter-text": ["enter"],
+		"add-history": ["+"]
 	},
-	color: { main: "#00ff00", accent: "#00ffff" },
+	colors: { main: "#0000ff", accent: "#00aaff", background: "#000000", foreground: "#ffffff", border: "#6666ff" },
 	"base-url": "http://157.230.208.158:3000"
 };
 
@@ -35,7 +36,7 @@ const _iv = Buffer.alloc(16); // iv should be 16
 
 var channel_name_list = [];
 
-var datadir = homedir + ".yccdata";
+var datadir = homedir + ".nallan";
 if (!fs.existsSync(datadir)) {
 	fs.mkdirSync(datadir);
 }
@@ -48,7 +49,7 @@ if (fs.existsSync(datadir + "/config.json")) {
 for (var i = 0; i < filedata.channels.length; i++) {
 	channel_name_list.push(
 		filedata.channels[i].name +
-			(filedata.channels[i].mode == "yamachat" ? "@yamac" : "")
+		(filedata.channels[i].mode == "yamachat" ? "@yamac" : "")
 	);
 }
 var old_channel = "";
@@ -77,7 +78,7 @@ function decrypt(text, key) {
 
 const screen = blessed.screen({
 	title: "NallanChat CLI",
-	smartCSR : true,
+	smartCSR: true,
 	fullUnicode: true,
 	cursor: {
 		artificial: true,
@@ -99,7 +100,7 @@ var chatbox = blessed.box({
 	scrollbar: {
 		ch: " ",
 		track: {
-			bg: filedata.color.main
+			bg: filedata.colors.main
 		},
 		style: {
 			inverse: true
@@ -113,19 +114,19 @@ var chatbox = blessed.box({
 	style: {
 		focus: {
 			border: {
-				fg: filedata.color.main
+				fg: filedata.colors.main
 			}
 		},
-		fg: "white",
-		bg: "black",
+		fg: filedata.colors.foreground,
+		bg: filedata.colors.background,
 		border: {
-			fg: "white"
+			fg: filedata.colors.border
 		}
 	}
 });
 
 var channelbox = blessed.list({
-	label: "{bold}{" + filedata.color.accent + "-fg} Channels {/}",
+	label: "{bold}{" + filedata.colors.accent + "-fg} Channels {/}",
 	top: "0",
 	left: "100%-20",
 	width: 20,
@@ -138,7 +139,7 @@ var channelbox = blessed.list({
 	scrollbar: {
 		ch: "#",
 		track: {
-			bg: filedata.color.main
+			bg: filedata.colors.main
 		},
 		style: {
 			inverse: true
@@ -147,23 +148,23 @@ var channelbox = blessed.list({
 	style: {
 		item: {
 			hover: {
-				bg: filedata.color.main
+				bg: filedata.colors.main
 			}
 		},
 		selected: {
-			bg: filedata.color.main,
-			fg: "black",
+			bg: filedata.colors.foreground,
+			fg: filedata.colors.background,
 			bold: true
 		},
 		focus: {
 			border: {
-				fg: filedata.color.main
+				fg: filedata.colors.main
 			}
 		},
-		fg: "white",
-		bg: "black",
+		fg: filedata.colors.foreground,
+		bg: filedata.colors.background,
 		border: {
-			fg: "white"
+			fg: filedata.colors.border
 		}
 	}
 });
@@ -180,19 +181,19 @@ var textstuff = blessed.textbox({
 	style: {
 		focus: {
 			border: {
-				fg: filedata.color.main
+				fg: filedata.colors.main
 			}
 		},
-		fg: "white",
-		bg: "black",
+		fg: filedata.colors.foreground,
+		bg: filedata.colors.background,
 		border: {
-			fg: "white"
+			fg: filedata.colors.border
 		}
 	}
 });
 
 var enter_url = blessed.textbox({
-	label: "{bold}{" + filedata.color.accent + "-fg} Enter Chat Url {/}",
+	label: "{bold}{" + filedata.colors.accent + "-fg} Enter Chat Url {/}",
 	top: "center",
 	left: "center",
 	width: "50%",
@@ -207,19 +208,19 @@ var enter_url = blessed.textbox({
 	style: {
 		focus: {
 			border: {
-				fg: filedata.color.main
+				fg: filedata.colors.main
 			}
 		},
-		fg: "white",
-		bg: "black",
+		fg: filedata.colors.foreground,
+		bg: filedata.colors.background,
 		border: {
-			fg: "white"
+			fg: filedata.colors.border
 		}
 	}
 });
 
 var newchannelform = blessed.box({
-	label: "{bold}{" + filedata.color.accent + "-fg} New Channel {/}",
+	label: "{bold}{" + filedata.colors.accent + "-fg} New Channel {/}",
 	top: "center",
 	left: "center",
 	tags: true,
@@ -231,13 +232,13 @@ var newchannelform = blessed.box({
 	style: {
 		focus: {
 			border: {
-				fg: filedata.color.main
+				fg: filedata.colors.main
 			}
 		},
-		fg: "white",
-		bg: "black",
+		fg: filedata.colors.foreground,
+		bg: filedata.colors.background,
 		border: {
-			fg: "white"
+			fg: filedata.colors.border
 		}
 	}
 });
@@ -256,13 +257,13 @@ var newchannel = blessed.textbox({
 	style: {
 		focus: {
 			border: {
-				fg: filedata.color.main
+				fg: filedata.colors.main
 			}
 		},
-		fg: "white",
-		bg: "black",
+		fg: filedata.colors.foreground,
+		bg: filedata.colors.background,
 		border: {
-			fg: "white"
+			fg: filedata.colors.border
 		}
 	}
 });
@@ -281,13 +282,13 @@ var newchannelkey = blessed.textbox({
 	style: {
 		focus: {
 			border: {
-				fg: filedata.color.main
+				fg: filedata.colors.main
 			}
 		},
-		fg: "white",
-		bg: "black",
+		fg: filedata.colors.foreground,
+		bg: filedata.colors.background,
 		border: {
-			fg: "white"
+			fg: filedata.colors.border
 		}
 	}
 });
@@ -296,7 +297,7 @@ newchannelform.append(newchannel);
 newchannelform.append(newchannelkey);
 
 var newuserform = blessed.box({
-	label: "{bold}{" + filedata.color.accent + "-fg} Register/Login {/}",
+	label: "{bold}{" + filedata.colors.accent + "-fg} Register/Login {/}",
 	top: "center",
 	left: "center",
 	tags: true,
@@ -308,13 +309,13 @@ var newuserform = blessed.box({
 	style: {
 		focus: {
 			border: {
-				fg: filedata.color.main
+				fg: filedata.colors.main
 			}
 		},
-		fg: "white",
-		bg: "black",
+		fg: filedata.colors.foreground,
+		bg: filedata.colors.background,
 		border: {
-			fg: "white"
+			fg: filedata.colors.border
 		}
 	}
 });
@@ -333,13 +334,13 @@ var newusername = blessed.textbox({
 	style: {
 		focus: {
 			border: {
-				fg: filedata.color.main
+				fg: filedata.colors.main
 			}
 		},
-		fg: "white",
-		bg: "black",
+		fg: filedata.colors.foreground,
+		bg: filedata.colors.background,
 		border: {
-			fg: "white"
+			fg: filedata.colors.border
 		}
 	}
 });
@@ -358,13 +359,13 @@ var newuserpassword = blessed.textbox({
 	style: {
 		focus: {
 			border: {
-				fg: filedata.color.main
+				fg: filedata.colors.main
 			}
 		},
-		fg: "white",
-		bg: "black",
+		fg: filedata.colors.foreground,
+		bg: filedata.colors.background,
 		border: {
-			fg: "white"
+			fg: filedata.colors.border
 		}
 	}
 });
@@ -384,13 +385,13 @@ var newusercolor = blessed.textbox({
 	style: {
 		focus: {
 			border: {
-				fg: filedata.color.main
+				fg: filedata.colors.main
 			}
 		},
-		fg: "white",
-		bg: "black",
+		fg: filedata.colors.foreground,
+		bg: filedata.colors.background,
 		border: {
-			fg: "white"
+			fg: filedata.colors.border
 		}
 	}
 });
@@ -403,35 +404,43 @@ function refreshBuffer() {
 	channelbox.setItems(channel_name_list);
 	chatbox.setLabel(
 		"{bold}{" +
-			filedata.color.accent +
-			"-fg} (" +
-			(scroller + 1) +
-			"/" +
-			filedata.channels.length +
-			") " +
-			filedata.channels[scroller].name +
-			(filedata.channels[scroller].key != undefined ? " : ENCRYPTED" : "") +
-			" {/}"
+		filedata.colors.accent +
+		"-fg} (" +
+		(scroller + 1) +
+		"/" +
+		filedata.channels.length +
+		") " +
+		filedata.channels[scroller].name +
+		(filedata.channels[scroller].key != undefined ? " : ENCRYPTED" : "") +
+		" {/}"
 	);
+	if (buffer[
+		filedata.channels[scroller].name +
+		(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
+	] == undefined)
+		buffer[
+			filedata.channels[scroller].name +
+			(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
+		] = {};
 	chatbox.setContent(
 		buffer[
 			filedata.channels[scroller].name +
-				(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
-		]
+			(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
+		].content
 	);
 	if (
 		buffer[
 			filedata.channels[scroller].name +
-				(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
-		] === undefined ||
+			(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
+		].content === undefined ||
 		old_channel !=
-			filedata.channels[scroller].name +
-				(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
+		filedata.channels[scroller].name +
+		(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
 	) {
 		chatbox.setScroll(Infinity);
 	}
 
-	if (chatbox.getScrollHeight() < chatbox.height) chatbox.setScroll(0);
+	if (chatbox.getScrollHeight() <= chatbox.height) chatbox.setScroll(0);
 	old_channel =
 		filedata.channels[scroller].name +
 		(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "");
@@ -493,12 +502,16 @@ function sendMessage(user, channel, yama, content, callback) {
 function getMessages(channel_full, callback) {
 	var channel = channel_full.name;
 	if (channel_full.mode == undefined) {
+		if (buffer[channel] == undefined)
+			buffer[channel] = {};
+		if (buffer[channel].count == undefined)
+			buffer[channel].count = 100;
 		request(
 			{
 				uri: filedata["base-url"] + "/read",
 				headers: {
 					channel: channel,
-					count: 100
+					count: buffer[channel].count
 				},
 				agent: false,
 				pool: {
@@ -606,23 +619,23 @@ function refreshChat(channel_full, callback) {
 			time_full = timeConverter(res[i].timestamp);
 			if (prev != time_full.day) {
 				prev = time_full.day;
-				s.push("{" + filedata.color.main + "-fg}{underline}{bold}\t" + prev);
+				s.push("{" + filedata.colors.background + "-fg}{"+ filedata.colors.foreground+"-bg}{bold}\t" + prev);
 			}
 			s.push(
 				"{/}" +
-					time_full.time +
-					" {" +
-					res[i].user.color +
-					"-fg}" +
-					decodeURIComponent(res[i].user.user) +
-					"{/} " +
-					(channel_full.key == undefined
-						? decodeURIComponent(res[i].content)
-						: decrypt(decodeURIComponent(res[i].content), channel_full.key))
+				time_full.time +
+				" {bold}{" +
+				res[i].user.color +
+				"-fg}" +
+				decodeURIComponent(res[i].user.user) +
+				"{/} " +
+				(channel_full.key == undefined
+					? decodeURIComponent(res[i].content)
+					: decrypt(decodeURIComponent(res[i].content), channel_full.key))
 			);
 		}
 		text = s.join("\n");
-		buffer[channel + (channel_full.mode == "yamachat" ? ".yc" : "")] = text;
+		buffer[channel + (channel_full.mode == "yamachat" ? ".yc" : "")].content = text;
 		if (callback) callback();
 	});
 }
@@ -647,7 +660,7 @@ function startWindows() {
 	channelbox.focus();
 	channelbox.select(0);
 
-	run = setInterval(function() {
+	run = setInterval(function () {
 		refreshChat(filedata.channels[scroller]);
 	}, 500);
 	run_buffer = setInterval(refreshBuffer, 200);
@@ -666,13 +679,13 @@ function startClient() {
 		checkUser();
 	}
 
-	screen.key(filedata.keybinds["quit"], function(ch, key) {
+	screen.key(filedata.keybinds["quit"], function (ch, key) {
 		clearInterval(run);
 		clearInterval(run_buffer);
 		fs.writeFileSync(
 			datadir + "/config.json",
 			JSON.stringify(filedata, null, "\t"),
-			function(err) {
+			function (err) {
 				if (err) {
 					console.log(err);
 					return process.exit(0);
@@ -682,7 +695,7 @@ function startClient() {
 		return process.exit(0);
 	});
 
-	enter_url.key("enter", function(ch, key) {
+	enter_url.key("enter", function (ch, key) {
 		if (enter_url.getContent().length > 0) {
 			filedata["base-url"] = enter_url.getContent();
 			screen.remove(enter_url);
@@ -692,54 +705,62 @@ function startClient() {
 		}
 	});
 
-	enter_url.key("escape", function(ch, key) {
+	enter_url.key("escape", function (ch, key) {
 		return process.exit(0);
 	});
 
-	channelbox.key(filedata.keybinds["channel-to-chat"], function(key) {
+	channelbox.key(filedata.keybinds["channel-to-chat"], function (key) {
 		chatbox.focus();
 	});
 
-	channelbox.key(filedata.keybinds["channel-to-text"], function(key) {
+	channelbox.key(filedata.keybinds["channel-to-text"], function (key) {
 		textstuff.focus();
 	});
 
-	channelbox.key(filedata.keybinds["add-channel"], function(key) {
+	channelbox.key(filedata.keybinds["add-channel"], function (key) {
 		screen.append(newchannelform);
 	});
 
-	channelbox.key(filedata.keybinds["remove-channel"], function(key) {
+	channelbox.key(filedata.keybinds["remove-channel"], function (key) {
 		filedata.channels.splice(scroller, 1);
 		channel_name_list.splice(scroller, 1);
 		if (scroller > 0) scroller--;
 		refreshBuffer();
 	});
 
-	textstuff.key(filedata.keybinds["exit-window"], function(ch, key) {
+	textstuff.key(filedata.keybinds["exit-window"], function (ch, key) {
 		chatbox.focus();
 	});
 
-	chatbox.key(filedata.keybinds["chat-to-channel"], function(ch, key) {
+	chatbox.key(filedata.keybinds["add-history"], function (ch, key) {
+		buffer[filedata.channels[scroller].name + (filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")].count += chatbox.height;
+		refreshChat(filedata.channels[scroller], () =>  {
+			refreshBuffer();
+			chatbox.setScroll(chatbox.height);
+		});
+	});
+
+	chatbox.key(filedata.keybinds["chat-to-channel"], function (ch, key) {
 		channelbox.focus();
 	});
 
-	chatbox.key(filedata.keybinds["enter-text"], function(ch, key) {
+	chatbox.key(filedata.keybinds["enter-text"], function (ch, key) {
 		if (sending == false) textstuff.focus();
 	});
 
-	chatbox.key(filedata.keybinds["scroll-up"], function(ch, key) {
+	chatbox.key(filedata.keybinds["scroll-up"], function (ch, key) {
 		chatbox.scroll(-1);
 	});
 
-	chatbox.key(filedata.keybinds["scroll-all"], function(ch, key) {
+	chatbox.key(filedata.keybinds["scroll-all"], function (ch, key) {
 		chatbox.setScroll(chatbox.getScrollHeight());
 	});
 
-	chatbox.key(filedata.keybinds["scroll-down"], function(ch, key) {
+	chatbox.key(filedata.keybinds["scroll-down"], function (ch, key) {
 		chatbox.scroll(1);
 	});
 
-	channelbox.key(filedata.keybinds["scroll-up"], function(ch, key) {
+	channelbox.key(filedata.keybinds["scroll-up"], function (ch, key) {
 		if (scroller > 0) {
 			scroller--;
 			channelbox.up(1);
@@ -747,7 +768,7 @@ function startClient() {
 		}
 	});
 
-	channelbox.key(filedata.keybinds["scroll-down"], function(ch, key) {
+	channelbox.key(filedata.keybinds["scroll-down"], function (ch, key) {
 		if (scroller < filedata.channels.length - 1) {
 			scroller++;
 			channelbox.down(1);
@@ -755,24 +776,24 @@ function startClient() {
 		}
 	});
 
-	channelbox.key(filedata.keybinds["add-channel"], function(key) {
+	channelbox.key(filedata.keybinds["add-channel"], function (key) {
 		screen.append(newchannelform);
 		newchannel.focus();
 	});
 
-	newusername.key(filedata.keybinds["exit-window"], function(ch, key) {
+	newusername.key(filedata.keybinds["exit-window"], function (ch, key) {
 		throw "User required.";
 	});
 
-	newuserpassword.key("escape", function(ch, key) {
+	newuserpassword.key("escape", function (ch, key) {
 		newusername.focus();
 	});
 
-	newusercolor.key("escape", function(ch, key) {
+	newusercolor.key("escape", function (ch, key) {
 		newuserpassword.focus();
 	});
 
-	newusername.key(["enter"], function(ch, key) {
+	newusername.key(["enter"], function (ch, key) {
 		if (newusername.getContent().length > 0) {
 			newuserpassword.focus();
 		} else {
@@ -780,7 +801,7 @@ function startClient() {
 		}
 	});
 
-	newuserpassword.key(["enter"], function(ch, key) {
+	newuserpassword.key(["enter"], function (ch, key) {
 		if (newuserpassword.getContent().length > 0) {
 			newusercolor.focus();
 		} else {
@@ -788,7 +809,7 @@ function startClient() {
 		}
 	});
 
-	newusercolor.key(["enter"], function(ch, key) {
+	newusercolor.key(["enter"], function (ch, key) {
 		if (newusercolor.getContent().length == 6) {
 			screen.remove(newuserform);
 			filedata.userdata = {
@@ -802,7 +823,7 @@ function startClient() {
 		}
 	});
 
-	newchannel.key(filedata.keybinds["exit-window"], function(ch, key) {
+	newchannel.key(filedata.keybinds["exit-window"], function (ch, key) {
 		channelbox.focus();
 		screen.remove(newchannelform);
 		newchannel.clearValue();
@@ -810,11 +831,11 @@ function startClient() {
 		screen.render();
 	});
 
-	newchannelkey.key("escape", function(ch, key) {
+	newchannelkey.key("escape", function (ch, key) {
 		newchannel.focus();
 	});
 
-	newchannel.key(["enter"], function(ch, key) {
+	newchannel.key(["enter"], function (ch, key) {
 		if (newchannel.getContent().length > 0) {
 			newchannelkey.focus();
 		} else {
@@ -822,7 +843,7 @@ function startClient() {
 		}
 	});
 
-	newchannelkey.key("enter", function(ch, key) {
+	newchannelkey.key("enter", function (ch, key) {
 		if (newchannel.getContent().length > 0) {
 			channelbox.focus();
 			scroller = filedata.channels.length;
@@ -850,7 +871,7 @@ function startClient() {
 		}
 	});
 
-	textstuff.key("enter", function(ch, key) {
+	textstuff.key("enter", function (ch, key) {
 		if (textstuff.getContent() != "" && sending == false) {
 			sending = true;
 			textstuff.style.bg = "red";
