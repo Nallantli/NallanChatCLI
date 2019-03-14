@@ -696,8 +696,8 @@ function startClient() {
 	});
 
 	enter_url.key("enter", function (ch, key) {
-		if (enter_url.getContent().length > 0) {
-			filedata["base-url"] = enter_url.getContent();
+		if (enter_url.getValue().length > 0) {
+			filedata["base-url"] = enter_url.getValue();
 			screen.remove(enter_url);
 			checkUser();
 		} else {
@@ -794,7 +794,7 @@ function startClient() {
 	});
 
 	newusername.key(["enter"], function (ch, key) {
-		if (newusername.getContent().length > 0) {
+		if (newusername.getValue().length > 0) {
 			newuserpassword.focus();
 		} else {
 			newusername.focus();
@@ -802,7 +802,7 @@ function startClient() {
 	});
 
 	newuserpassword.key(["enter"], function (ch, key) {
-		if (newuserpassword.getContent().length > 0) {
+		if (newuserpassword.getValue().length > 0) {
 			newusercolor.focus();
 		} else {
 			newuserpassword.focus();
@@ -810,12 +810,12 @@ function startClient() {
 	});
 
 	newusercolor.key(["enter"], function (ch, key) {
-		if (newusercolor.getContent().length == 6) {
+		if (newusercolor.getValue().length == 6) {
 			screen.remove(newuserform);
 			filedata.userdata = {
-				user: newusername.getContent(),
-				password: newuserpassword.getContent(),
-				color: "#" + newusercolor.getContent()
+				user: newusername.getValue(),
+				password: newuserpassword.getValue(),
+				color: "#" + newusercolor.getValue()
 			};
 			startWindows();
 		} else {
@@ -836,7 +836,7 @@ function startClient() {
 	});
 
 	newchannel.key(["enter"], function (ch, key) {
-		if (newchannel.getContent().length > 0) {
+		if (newchannel.getValue().length > 0) {
 			newchannelkey.focus();
 		} else {
 			newchannel.focus();
@@ -844,20 +844,20 @@ function startClient() {
 	});
 
 	newchannelkey.key("enter", function (ch, key) {
-		if (newchannel.getContent().length > 0) {
+		if (newchannel.getValue().length > 0) {
 			channelbox.focus();
 			scroller = filedata.channels.length;
-			if (newchannelkey.getContent().length > 0) {
+			if (newchannelkey.getValue().length > 0) {
 				filedata.channels.push({
-					name: newchannel.getContent(),
-					key: newchannelkey.getContent()
+					name: newchannel.getValue(),
+					key: newchannelkey.getValue()
 				});
 			} else {
 				filedata.channels.push({
-					name: newchannel.getContent()
+					name: newchannel.getValue()
 				});
 			}
-			channel_name_list.push(newchannel.getContent());
+			channel_name_list.push(newchannel.getValue());
 			screen.remove(newchannelform);
 			refreshBuffer();
 			channelbox.select(scroller);
@@ -872,12 +872,12 @@ function startClient() {
 	});
 
 	textstuff.key("enter", function (ch, key) {
-		if (textstuff.getContent() != "" && sending == false) {
+		if (textstuff.getValue() != "" && sending == false) {
 			sending = true;
 			textstuff.style.bg = "red";
 			textstuff.render();
 			textstuff.inputOnFocus = false;
-			var message = textstuff.getContent();
+			var message = textstuff.getValue();
 			if (filedata.channels[scroller].key !== undefined)
 				message = encrypt(message, filedata.channels[scroller].key);
 			sendMessage(
