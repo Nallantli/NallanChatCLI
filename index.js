@@ -350,7 +350,6 @@ var newuserpassword = blessed.textbox({
 	left: 0,
 	width: 40,
 	tags: true,
-	censor: true,
 	height: 3,
 	inputOnFocus: true,
 	border: {
