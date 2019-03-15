@@ -41,9 +41,22 @@ if (!fs.existsSync(datadir)) {
 	fs.mkdirSync(datadir);
 }
 
+function updateConfig() {
+	fs.writeFileSync(
+		datadir + "/config.json",
+		JSON.stringify(filedata, null, "\t"),
+		(err) => {
+			if (err)
+				throw err;
+		}
+	);
+}
+
 var filedata = defaultconfig;
 if (fs.existsSync(datadir + "/config.json")) {
 	filedata = JSON.parse(fs.readFileSync(datadir + "/config.json", "utf8"));
+} else {
+	updateConfig();
 }
 
 for (var i = 0; i < filedata.channels.length; i++) {
@@ -52,6 +65,7 @@ for (var i = 0; i < filedata.channels.length; i++) {
 		(filedata.channels[i].mode == "yamachat" ? "@yamac" : "")
 	);
 }
+
 var old_channel = "";
 var scroller = 0;
 var buffer = {};
@@ -620,7 +634,7 @@ function refreshChat(channel_full, callback) {
 			time_full = timeConverter(res[i].timestamp);
 			if (prev != time_full.day) {
 				prev = time_full.day;
-				s.push("{" + filedata.colors.background + "-fg}{"+ filedata.colors.foreground+"-bg}{bold}\t" + prev);
+				s.push("{" + filedata.colors.background + "-fg}{" + filedata.colors.foreground + "-bg}{bold}\t" + prev);
 			}
 			s.push(
 				"{/}" +
@@ -683,22 +697,14 @@ function startClient() {
 	screen.key(filedata.keybinds["quit"], function (ch, key) {
 		clearInterval(run);
 		clearInterval(run_buffer);
-		fs.writeFileSync(
-			datadir + "/config.json",
-			JSON.stringify(filedata, null, "\t"),
-			function (err) {
-				if (err) {
-					console.log(err);
-					return process.exit(0);
-				}
-			}
-		);
+		updateConfig();
 		return process.exit(0);
 	});
 
 	enter_url.key("enter", function (ch, key) {
 		if (enter_url.getValue().length > 0) {
 			filedata["base-url"] = enter_url.getValue();
+			updateConfig();			
 			screen.remove(enter_url);
 			checkUser();
 		} else {
@@ -735,7 +741,7 @@ function startClient() {
 
 	chatbox.key(filedata.keybinds["add-history"], function (ch, key) {
 		buffer[filedata.channels[scroller].name + (filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")].count += chatbox.height;
-		refreshChat(filedata.channels[scroller], () =>  {
+		refreshChat(filedata.channels[scroller], () => {
 			refreshBuffer();
 			chatbox.setScroll(chatbox.height);
 		});
@@ -818,6 +824,7 @@ function startClient() {
 				password: newuserpassword.getValue(),
 				color: "#" + newusercolor.getValue()
 			};
+			updateConfig();
 			startWindows();
 		} else {
 			newusercolor.focus();
@@ -864,6 +871,7 @@ function startClient() {
 			channelbox.select(scroller);
 			newchannel.clearValue();
 			newchannelkey.clearValue();
+			updateConfig();
 		} else {
 			screen.remove(newchannelform);
 			newchannel.clearValue();
