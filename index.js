@@ -425,8 +425,7 @@ newuserform.append(newusername);
 newuserform.append(newuserpassword);
 newuserform.append(newusercolor);
 
-function refreshBuffer() {
-	channelbox.setItems(channel_name_list);
+function updateChatBoxLabel() {
 	chatbox.setLabel(
 		"{bold}{" +
 		filedata.colors.accent +
@@ -439,6 +438,11 @@ function refreshBuffer() {
 		(filedata.channels[scroller].key != undefined ? " : ENCRYPTED" : "") +
 		" {/}"
 	);
+}
+
+function refreshBuffer() {
+	channelbox.setItems(channel_name_list);
+	updateChatBoxLabel();
 	if (buffer[
 		filedata.channels[scroller].name +
 		(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
@@ -447,12 +451,15 @@ function refreshBuffer() {
 			filedata.channels[scroller].name +
 			(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
 		] = {};
+	var make_scroll = (chatbox.getScrollPerc() == 100);
 	chatbox.setContent(
 		buffer[
 			filedata.channels[scroller].name +
 			(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
 		].content
 	);
+	if (make_scroll)
+		chatbox.setScroll(Infinity);
 	if (
 		buffer[
 			filedata.channels[scroller].name +
@@ -836,6 +843,7 @@ function startClient() {
 
 	chatbox.key(filedata.keybinds["scroll-up"], function (ch, key) {
 		chatbox.scroll(-1);
+		updateChatBoxLabel();
 	});
 
 	chatbox.key(filedata.keybinds["scroll-all"], function (ch, key) {
