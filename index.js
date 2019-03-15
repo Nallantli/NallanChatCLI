@@ -784,6 +784,13 @@ function startClient() {
 	});
 
 	textstuff.key(filedata.keybinds["exit-window"], function (ch, key) {
+		if (big) {
+			textstuff.top = "100%-3";
+			textstuff.left = 0;
+			textstuff.width = "100%-20";
+			textstuff.height = 3;
+			big = false;
+		}
 		chatbox.focus();
 		screen.render();
 	});
