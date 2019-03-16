@@ -665,6 +665,9 @@ function refreshChat(channel_full, callback) {
 				? decodeURIComponent(res[i].content)
 				: decrypt(decodeURIComponent(res[i].content), channel_full.key));
 
+			if (message.charAt(message.length - 1) == '\n' || message.charAt(message.length - 1) == '\r')
+				message = message.substr(0, message.length - 1);
+
 			if (message.includes("`")) {
 				var prior = "";
 				var current = "";
