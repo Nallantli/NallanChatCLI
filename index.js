@@ -587,7 +587,7 @@ function getMessages(channel_full, callback) {
 							json = JSON.parse(
 								convert.xml2json(body_edit[i], { compact: true, spaces: 4 })
 							);
-						} catch {
+						} catch(err) {
 							throw body_edit[i];
 						}
 						s.push({
