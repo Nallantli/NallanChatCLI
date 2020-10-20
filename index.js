@@ -492,7 +492,7 @@ function sendMessage(user, channel, yama, content, callback) {
 					uri: filedata["base-url"] + "/send",
 					headers: {
 						user: encodeURIComponent(user.user),
-						password: user.password,
+						password: encrypt(user.password, user.password),
 						content: encodeURIComponent(content),
 						color: user.color,
 						channel: encodeURIComponent(channel)
