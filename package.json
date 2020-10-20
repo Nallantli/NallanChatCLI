@@ -7,13 +7,11 @@
 		"nallanchat": "./index.js"
 	},
 	"dependencies": {
-		"@types/blessed": "^0.1.17",
 		"axios": "^0.20.0",
-		"blessed": "*",
-		"request": "*",
-		"xml-js": "*"
+		"blessed": "*"
 	},
 	"devDependencies": {
+		"@types/blessed": "^0.1.17",
 		"typescript": "^4.0.3"
 	},
 	"scripts": {
