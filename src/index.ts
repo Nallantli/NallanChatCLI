@@ -1,16 +1,14 @@
-#!/usr/bin/env node
-
-const blessed = require("blessed");
-const request = require("request");
-const convert = require("xml-js");
-const fs = require("fs");
-const crypto = require("crypto");
+import * as blessed from "blessed";
+import * as fs from "fs";
+import * as crypto from "crypto";
+import axios from "axios";
 const homedir = require("os").homedir() + "/";
 
 const defaultconfig = {
 	channels: [
 		{
-			name: "main"
+			name: "main",
+			key: undefined
 		}
 	],
 	keybinds: {
@@ -28,6 +26,7 @@ const defaultconfig = {
 		"add-history": ["+"],
 		"toggle-editor": ["C-e"]
 	},
+	userdata: undefined,
 	colors: { main: "blue", accent: "cyan", background: "black", foreground: "white", border: "gray" },
 	"base-url": "http://sonolang.com:3000"
 };
@@ -45,11 +44,7 @@ if (!fs.existsSync(datadir)) {
 function updateConfig() {
 	fs.writeFileSync(
 		datadir + "/config.json",
-		JSON.stringify(filedata, null, "\t"),
-		(err) => {
-			if (err)
-				throw err;
-		}
+		JSON.stringify(filedata, null, "\t")
 	);
 }
 
@@ -69,16 +64,13 @@ if (fs.existsSync(datadir + "/config.json")) {
 }
 
 for (let i = 0; i < filedata.channels.length; i++) {
-	channel_name_list.push(
-		filedata.channels[i].name +
-		(filedata.channels[i].mode == "yamachat" ? "@yamac" : "")
-	);
+	channel_name_list.push(filedata.channels[i].name);
 }
 
 let old_channel = "";
 let scroller = 0;
 let buffer = {};
-function encrypt(text, key) {
+function encrypt(text: string, key: string) {
 	let crypkey = Buffer.concat([Buffer.from(key)], _key.length);
 	let cipher = crypto.createCipheriv("aes-256-cbc", crypkey, _iv);
 	let encrypted = cipher.update(text);
@@ -86,7 +78,7 @@ function encrypt(text, key) {
 	return encrypted.toString("hex");
 }
 
-function decrypt(text, key) {
+function decrypt(text: string, key: string) {
 	try {
 		let encryptedText = Buffer.from(text, "hex");
 		let crypkey = Buffer.concat([Buffer.from(key)], _key.length);
@@ -172,22 +164,22 @@ let channelbox = blessed.list({
 		item: {
 			hover: {
 				bg: filedata.colors.main
+			},
+			focus: {
+				border: {
+					fg: filedata.colors.main
+				}
+			},
+			fg: filedata.colors.foreground,
+			bg: filedata.colors.background,
+			border: {
+				fg: filedata.colors.border
 			}
 		},
 		selected: {
 			bg: filedata.colors.foreground,
 			fg: filedata.colors.background,
 			bold: true
-		},
-		focus: {
-			border: {
-				fg: filedata.colors.main
-			}
-		},
-		fg: filedata.colors.foreground,
-		bg: filedata.colors.background,
-		border: {
-			fg: filedata.colors.border
 		}
 	}
 });
@@ -443,168 +435,72 @@ function updateChatBoxLabel() {
 function refreshBuffer() {
 	channelbox.setItems(channel_name_list);
 	updateChatBoxLabel();
-	if (buffer[
-		filedata.channels[scroller].name +
-		(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
-	] == undefined)
-		buffer[
-			filedata.channels[scroller].name +
-			(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
-		] = {};
+	if (buffer[filedata.channels[scroller].name] == undefined)
+		buffer[filedata.channels[scroller].name] = {};
 	let make_scroll = (chatbox.getScrollPerc() == 100);
-	chatbox.setContent(
-		buffer[
-			filedata.channels[scroller].name +
-			(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
-		].content
-	);
+	chatbox.setContent(buffer[filedata.channels[scroller].name].content);
 	if (make_scroll)
 		chatbox.setScroll(Infinity);
 	if (
-		buffer[
-			filedata.channels[scroller].name +
-			(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
-		].content === undefined ||
-		old_channel !=
-		filedata.channels[scroller].name +
-		(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
+		buffer[filedata.channels[scroller].name].content === undefined ||
+		old_channel != filedata.channels[scroller].name
 	) {
 		chatbox.setScroll(Infinity);
 	}
 
 	if (chatbox.getScrollHeight() <= chatbox.height) chatbox.setScroll(0);
-	old_channel =
-		filedata.channels[scroller].name +
-		(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "");
+	old_channel = filedata.channels[scroller].name;
 	screen.render();
 }
 
-function sendMessage(user, channel, yama, content, callback) {
+function sendMessage(user: { user: string; password: string; color: string; }, channel: string | number | boolean, content: string, callback: { (): void; (data: object[]): void; }) {
 	while (content.charAt(content.length - 1) == '\n' || content.charAt(content.length - 1) == ' ' || content.charAt(content.length - 1) == '\t')
 		content = content.substr(0, content.length - 1);
 	if (content.length == 0) {
 		if (callback)
 			callback(undefined);
 	} else {
-		if (!yama) {
-			request(
-				{
-					uri: filedata["base-url"] + "/send",
-					headers: {
-						user: encodeURIComponent(user.user),
-						password: encrypt(user.password, user.password),
-						content: encodeURIComponent(content),
-						color: user.color,
-						channel: encodeURIComponent(channel)
-					},
-					agent: false,
-					pool: {
-						maxSockets: Infinity
-					},
-					method: "GET"
-				},
-				(err, req, res) => {
-					if (err) throw err;
-					callback(res);
-				}
-			);
-		} else {
-			request(
-				{
-					headers: {
-						user: encodeURIComponent(user.user),
-						password: encrypt(user.password, user.password),
-						colour: user.color.substr(1)
-					},
-					uri:
-						filedata["yama-url"] +
-						encodeURIComponent(filedata.channels[scroller].name) +
-						"/send/" +
-						encodeURIComponent(content),
-					agent: false,
-					pool: {
-						maxSockets: Infinity
-					},
-					timeout: 500,
-					method: "GET"
-				},
-				(err, req, res) => {
-					if (err) throw err;
-					callback(res);
-				}
-			);
-		}
-	}
-}
-
-function getMessages(channel_full, callback) {
-	let channel = channel_full.name;
-	if (channel_full.mode == undefined) {
-		if (buffer[channel] == undefined)
-			buffer[channel] = {};
-		if (buffer[channel].count == undefined)
-			buffer[channel].count = 100;
-		request(
+		axios(
 			{
-				uri: filedata["base-url"] + "/read",
+				url: filedata["base-url"] + "/send",
 				headers: {
-					channel: channel,
-					count: buffer[channel].count
-				},
-				agent: false,
-				pool: {
-					maxSockets: Infinity
-				},
-				method: "GET"
-			},
-			(err, req, res) => {
-				if (err) throw err;
-				callback(res);
+					user: encodeURIComponent(user.user),
+					password: encrypt(user.password, user.password),
+					content: encodeURIComponent(content),
+					color: user.color,
+					channel: encodeURIComponent(channel)
+				}
 			}
-		);
-	} else {
-		request(
-			{
-				uri: filedata["yama-url"] + channel + "/read",
-				pool: {
-					maxSockets: Infinity
-				},
-				json: false,
-				timeout: 1000,
-				agent: false
-			},
-			(err, res, html) => {
-				if (err) {
-					/*todo*/
-				}
-				if (html !== undefined) {
-					let body_edit = html.split("\r\n");
-					let s = [];
-					for (let i = 0; i < body_edit.length - 1; i++) {
-						try {
-							let json = JSON.parse(
-								convert.xml2json(body_edit[i], { compact: true, spaces: 4 })
-							);
-							s.push({
-								user: {
-									user: json["div"]["_attributes"]["data-username"],
-									color: "#" + json["div"]["_attributes"]["data-colour"]
-								},
-								content: json.div._text,
-								timestamp: json["div"]["_attributes"]["data-timestamp"]
-							});
-						} catch (err2) {
-							throw body_edit[i];
-						}
-					}
-					callback(JSON.stringify(s));
-				}
+		).then(
+			(res) => {
+				callback(res.data);
 			}
 		);
 	}
 }
 
-function timeConverter(UNIX_timestamp) {
+function getMessages(channel_full: { name: string; mode?: string; key?: string }, callback: { (res: { timestamp: number; content: string, user: { user: string, color: string } }[]): void }) {
+	let channel = channel_full.name;
+	if (buffer[channel] == undefined)
+		buffer[channel] = {};
+	if (buffer[channel].count == undefined)
+		buffer[channel].count = 100;
+	axios(
+		{
+			url: filedata["base-url"] + "/read",
+			headers: {
+				channel: channel,
+				count: buffer[channel].count
+			}
+		}
+	).then(
+		(res) => {
+			callback(res.data);
+		}
+	);
+}
+
+function timeConverter(UNIX_timestamp: number) {
 	let a = new Date(UNIX_timestamp);
 	let months = [
 		"Jan",
@@ -638,18 +534,10 @@ function timeConverter(UNIX_timestamp) {
 	return time;
 }
 
-let count = 0;
-function refreshChat(channel_full, callback) {
-	if (channel_full.mode == "yamachat" && count < 5) {
-		count++;
-		if (callback) callback();
-		return;
-	}
-	count = 0;
+function refreshChat(channel_full: { name: string; key?: string; }, callback?: { (): void }) {
 	let channel = channel_full.name;
-	getMessages(channel_full, res => {
+	getMessages(channel_full, (res: { timestamp: number; content: string, user: { user: string, color: string } }[]) => {
 		let s = [];
-		res = JSON.parse(res);
 		res = res.reverse();
 		let prev = "";
 		for (let i = 0; i < res.length; i++) {
@@ -706,14 +594,14 @@ function refreshChat(channel_full, callback) {
 			);
 		}
 		let text = s.join("\n");
-		buffer[channel + (channel_full.mode == "yamachat" ? ".yc" : "")].content = text;
+		buffer[channel].content = text;
 		if (callback) callback();
 	});
 }
 
 let sending = false;
-let run;
-let run_buffer;
+let run: NodeJS.Timeout;
+let run_buffer: NodeJS.Timeout;
 
 function checkUser() {
 	if (filedata.userdata == undefined) {
@@ -750,14 +638,14 @@ function startClient() {
 		checkUser();
 	}
 
-	screen.key(filedata.keybinds["quit"], function (ch, key) {
+	screen.key(filedata.keybinds["quit"], () => {
 		clearInterval(run);
 		clearInterval(run_buffer);
 		updateConfig();
 		return process.exit(0);
 	});
 
-	enter_url.key("enter", function (ch, key) {
+	enter_url.key("enter", () => {
 		if (enter_url.getValue().length > 0) {
 			filedata["base-url"] = enter_url.getValue();
 			updateConfig();
@@ -768,30 +656,30 @@ function startClient() {
 		}
 	});
 
-	enter_url.key("escape", function (ch, key) {
+	enter_url.key("escape", () => {
 		return process.exit(0);
 	});
 
-	channelbox.key(filedata.keybinds["channel-to-chat"], function (key) {
+	channelbox.key(filedata.keybinds["channel-to-chat"], () => {
 		chatbox.focus();
 	});
 
-	channelbox.key(filedata.keybinds["channel-to-text"], function (key) {
+	channelbox.key(filedata.keybinds["channel-to-text"], () => {
 		textstuff.focus();
 	});
 
-	channelbox.key(filedata.keybinds["add-channel"], function (key) {
+	channelbox.key(filedata.keybinds["add-channel"], () => {
 		screen.append(newchannelform);
 	});
 
-	channelbox.key(filedata.keybinds["remove-channel"], function (key) {
+	channelbox.key(filedata.keybinds["remove-channel"], () => {
 		filedata.channels.splice(scroller, 1);
 		channel_name_list.splice(scroller, 1);
 		if (scroller > 0) scroller--;
 		refreshBuffer();
 	});
 
-	textstuff.key(filedata.keybinds["exit-window"], function (ch, key) {
+	textstuff.key(filedata.keybinds["exit-window"], () => {
 		if (big) {
 			textstuff.top = "100%-3";
 			textstuff.left = 0;
@@ -805,7 +693,7 @@ function startClient() {
 
 	let big = false;
 
-	textstuff.key(filedata.keybinds["toggle-editor"], function (ch, key) {
+	textstuff.key(filedata.keybinds["toggle-editor"], () => {
 		if (big) {
 			textstuff.top = "100%-3";
 			textstuff.left = 0;
@@ -822,40 +710,40 @@ function startClient() {
 		screen.render();
 	});
 
-	chatbox.key(filedata.keybinds["add-history"], function (ch, key) {
-		buffer[filedata.channels[scroller].name + (filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")].count += chatbox.height;
+	chatbox.key(filedata.keybinds["add-history"], () => {
+		buffer[filedata.channels[scroller].name].count += chatbox.height;
 		refreshChat(filedata.channels[scroller], () => {
 			refreshBuffer();
-			chatbox.setScroll(chatbox.height);
+			chatbox.setScroll(chatbox.height as number);
 		});
 	});
 
-	chatbox.key(filedata.keybinds["chat-to-channel"], function (ch, key) {
+	chatbox.key(filedata.keybinds["chat-to-channel"], () => {
 		channelbox.focus();
 		screen.render();
 	});
 
-	chatbox.key(filedata.keybinds["enter-text"], function (ch, key) {
+	chatbox.key(filedata.keybinds["enter-text"], () => {
 		if (sending == false) {
 			textstuff.focus();
 			screen.render();
 		}
 	});
 
-	chatbox.key(filedata.keybinds["scroll-up"], function (ch, key) {
+	chatbox.key(filedata.keybinds["scroll-up"], () => {
 		chatbox.scroll(-1);
 		updateChatBoxLabel();
 	});
 
-	chatbox.key(filedata.keybinds["scroll-all"], function (ch, key) {
+	chatbox.key(filedata.keybinds["scroll-all"], () => {
 		chatbox.setScroll(chatbox.getScrollHeight());
 	});
 
-	chatbox.key(filedata.keybinds["scroll-down"], function (ch, key) {
+	chatbox.key(filedata.keybinds["scroll-down"], () => {
 		chatbox.scroll(1);
 	});
 
-	channelbox.key(filedata.keybinds["scroll-up"], function (ch, key) {
+	channelbox.key(filedata.keybinds["scroll-up"], () => {
 		if (scroller > 0) {
 			scroller--;
 			channelbox.up(1);
@@ -863,7 +751,7 @@ function startClient() {
 		}
 	});
 
-	channelbox.key(filedata.keybinds["scroll-down"], function (ch, key) {
+	channelbox.key(filedata.keybinds["scroll-down"], () => {
 		if (scroller < filedata.channels.length - 1) {
 			scroller++;
 			channelbox.down(1);
@@ -871,24 +759,24 @@ function startClient() {
 		}
 	});
 
-	channelbox.key(filedata.keybinds["add-channel"], function (key) {
+	channelbox.key(filedata.keybinds["add-channel"], () => {
 		screen.append(newchannelform);
 		newchannel.focus();
 	});
 
-	newusername.key(filedata.keybinds["exit-window"], function (ch, key) {
+	newusername.key(filedata.keybinds["exit-window"], () => {
 		throw "User required.";
 	});
 
-	newuserpassword.key("escape", function (ch, key) {
+	newuserpassword.key("escape", () => {
 		newusername.focus();
 	});
 
-	newusercolor.key("escape", function (ch, key) {
+	newusercolor.key("escape", () => {
 		newuserpassword.focus();
 	});
 
-	newusername.key(["enter"], function (ch, key) {
+	newusername.key(["enter"], () => {
 		if (newusername.getValue().length > 0) {
 			newuserpassword.focus();
 		} else {
@@ -896,7 +784,7 @@ function startClient() {
 		}
 	});
 
-	newuserpassword.key(["enter"], function (ch, key) {
+	newuserpassword.key(["enter"], () => {
 		if (newuserpassword.getValue().length > 0) {
 			newusercolor.focus();
 		} else {
@@ -904,7 +792,7 @@ function startClient() {
 		}
 	});
 
-	newusercolor.key(["enter"], function (ch, key) {
+	newusercolor.key(["enter"], () => {
 		if (newusercolor.getValue().length == 6) {
 			screen.remove(newuserform);
 			filedata.userdata = {
@@ -919,7 +807,7 @@ function startClient() {
 		}
 	});
 
-	newchannel.key(filedata.keybinds["exit-window"], function (ch, key) {
+	newchannel.key(filedata.keybinds["exit-window"], () => {
 		channelbox.focus();
 		screen.remove(newchannelform);
 		newchannel.clearValue();
@@ -927,11 +815,11 @@ function startClient() {
 		screen.render();
 	});
 
-	newchannelkey.key("escape", function (ch, key) {
+	newchannelkey.key("escape", () => {
 		newchannel.focus();
 	});
 
-	newchannel.key(["enter"], function (ch, key) {
+	newchannel.key(["enter"], () => {
 		if (newchannel.getValue().length > 0) {
 			newchannelkey.focus();
 		} else {
@@ -939,7 +827,7 @@ function startClient() {
 		}
 	});
 
-	newchannelkey.key("enter", function (ch, key) {
+	newchannelkey.key("enter", () => {
 		if (newchannel.getValue().length > 0) {
 			channelbox.focus();
 			scroller = filedata.channels.length;
@@ -950,7 +838,8 @@ function startClient() {
 				});
 			} else {
 				filedata.channels.push({
-					name: newchannel.getValue()
+					name: newchannel.getValue(),
+					key: undefined
 				});
 			}
 			channel_name_list.push(newchannel.getValue());
@@ -968,7 +857,7 @@ function startClient() {
 		}
 	});
 
-	textstuff.key("enter", function (ch, key) {
+	textstuff.key("enter", () => {
 		if (!big) {
 			if (textstuff.getValue() != "" && sending == false) {
 				sending = true;
@@ -980,9 +869,8 @@ function startClient() {
 				sendMessage(
 					filedata.userdata,
 					filedata.channels[scroller].name,
-					filedata.channels[scroller].mode == "yamachat",
 					message,
-					res => {
+					() => {
 						textstuff.clearValue();
 						sending = false;
 						textstuff.style.bg = "black";

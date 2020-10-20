@@ -7,11 +7,15 @@
 		"nallanchat": "./index.js"
 	},
 	"dependencies": {
+		"@types/blessed": "^0.1.17",
+		"axios": "^0.20.0",
 		"blessed": "*",
 		"request": "*",
 		"xml-js": "*"
 	},
-	"devDependencies": {},
+	"devDependencies": {
+		"typescript": "^4.0.3"
+	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
