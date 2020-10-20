@@ -29,15 +29,15 @@ const defaultconfig = {
 		"toggle-editor": ["C-e"]
 	},
 	colors: { main: "blue", accent: "cyan", background: "black", foreground: "white", border: "gray" },
-	"base-url": "http://157.230.208.158:3000"
+	"base-url": "http://sonolang.com:3000"
 };
 
 const _key = Buffer.alloc(32); // key should be 32 bytes
 const _iv = Buffer.alloc(16); // iv should be 16
 
-var channel_name_list = [];
+let channel_name_list = [];
 
-var datadir = homedir + ".nallan";
+let datadir = homedir + ".nallan";
 if (!fs.existsSync(datadir)) {
 	fs.mkdirSync(datadir);
 }
@@ -53,7 +53,7 @@ function updateConfig() {
 	);
 }
 
-var filedata = defaultconfig;
+let filedata = defaultconfig;
 if (fs.existsSync(datadir + "/config.json")) {
 	filedata = JSON.parse(fs.readFileSync(datadir + "/config.json", "utf8"));
 	Object.keys(defaultconfig.keybinds).forEach((key) => {
@@ -68,30 +68,30 @@ if (fs.existsSync(datadir + "/config.json")) {
 	updateConfig();
 }
 
-for (var i = 0; i < filedata.channels.length; i++) {
+for (let i = 0; i < filedata.channels.length; i++) {
 	channel_name_list.push(
 		filedata.channels[i].name +
 		(filedata.channels[i].mode == "yamachat" ? "@yamac" : "")
 	);
 }
 
-var old_channel = "";
-var scroller = 0;
-var buffer = {};
+let old_channel = "";
+let scroller = 0;
+let buffer = {};
 function encrypt(text, key) {
-	var crypkey = Buffer.concat([Buffer.from(key)], _key.length);
-	var cipher = crypto.createCipheriv("aes-256-cbc", crypkey, _iv);
-	var encrypted = cipher.update(text);
+	let crypkey = Buffer.concat([Buffer.from(key)], _key.length);
+	let cipher = crypto.createCipheriv("aes-256-cbc", crypkey, _iv);
+	let encrypted = cipher.update(text);
 	encrypted = Buffer.concat([encrypted, cipher.final()]);
 	return encrypted.toString("hex");
 }
 
 function decrypt(text, key) {
 	try {
-		var encryptedText = Buffer.from(text, "hex");
-		var crypkey = Buffer.concat([Buffer.from(key)], _key.length);
-		var decipher = crypto.createDecipheriv("aes-256-cbc", crypkey, _iv);
-		var decrypted = decipher.update(encryptedText);
+		let encryptedText = Buffer.from(text, "hex");
+		let crypkey = Buffer.concat([Buffer.from(key)], _key.length);
+		let decipher = crypto.createDecipheriv("aes-256-cbc", crypkey, _iv);
+		let decrypted = decipher.update(encryptedText);
 		decrypted = Buffer.concat([decrypted, decipher.final()]);
 		return decrypted.toString();
 	} catch (err) {
@@ -112,7 +112,7 @@ const screen = blessed.screen({
 });
 
 
-var chatbox = blessed.box({
+let chatbox = blessed.box({
 	scrollable: true,
 	alwaysScroll: true,
 	label: " Loading... ",
@@ -148,7 +148,7 @@ var chatbox = blessed.box({
 	}
 });
 
-var channelbox = blessed.list({
+let channelbox = blessed.list({
 	label: "{bold}{" + filedata.colors.accent + "-fg} Channels {/}",
 	top: "0",
 	left: "100%-20",
@@ -192,7 +192,7 @@ var channelbox = blessed.list({
 	}
 });
 
-var textstuff = blessed.textarea({
+let textstuff = blessed.textarea({
 	top: "100%-3",
 	left: "0",
 	width: "100%-20",
@@ -216,7 +216,7 @@ var textstuff = blessed.textarea({
 	}
 });
 
-var enter_url = blessed.textbox({
+let enter_url = blessed.textbox({
 	label: "{bold}{" + filedata.colors.accent + "-fg} Enter Chat Url {/}",
 	top: "center",
 	left: "center",
@@ -243,7 +243,7 @@ var enter_url = blessed.textbox({
 	}
 });
 
-var newchannelform = blessed.box({
+let newchannelform = blessed.box({
 	label: "{bold}{" + filedata.colors.accent + "-fg} New Channel {/}",
 	top: "center",
 	left: "center",
@@ -267,7 +267,7 @@ var newchannelform = blessed.box({
 	}
 });
 
-var newchannel = blessed.textbox({
+let newchannel = blessed.textbox({
 	label: " Name ",
 	top: 0,
 	left: 0,
@@ -292,7 +292,7 @@ var newchannel = blessed.textbox({
 	}
 });
 
-var newchannelkey = blessed.textbox({
+let newchannelkey = blessed.textbox({
 	label: " Key ",
 	top: 3,
 	left: 0,
@@ -320,7 +320,7 @@ var newchannelkey = blessed.textbox({
 newchannelform.append(newchannel);
 newchannelform.append(newchannelkey);
 
-var newuserform = blessed.box({
+let newuserform = blessed.box({
 	label: "{bold}{" + filedata.colors.accent + "-fg} Register/Login {/}",
 	top: "center",
 	left: "center",
@@ -344,7 +344,7 @@ var newuserform = blessed.box({
 	}
 });
 
-var newusername = blessed.textbox({
+let newusername = blessed.textbox({
 	label: " Username ",
 	top: 0,
 	left: 0,
@@ -369,7 +369,7 @@ var newusername = blessed.textbox({
 	}
 });
 
-var newuserpassword = blessed.textbox({
+let newuserpassword = blessed.textbox({
 	label: " Password ",
 	top: 3,
 	left: 0,
@@ -395,7 +395,7 @@ var newuserpassword = blessed.textbox({
 	}
 });
 
-var newusercolor = blessed.textbox({
+let newusercolor = blessed.textbox({
 	label: " Color Hex ",
 	top: 6,
 	left: 0,
@@ -451,7 +451,7 @@ function refreshBuffer() {
 			filedata.channels[scroller].name +
 			(filedata.channels[scroller].mode == "yamachat" ? ".yc" : "")
 		] = {};
-	var make_scroll = (chatbox.getScrollPerc() == 100);
+	let make_scroll = (chatbox.getScrollPerc() == 100);
 	chatbox.setContent(
 		buffer[
 			filedata.channels[scroller].name +
@@ -521,7 +521,6 @@ function sendMessage(user, channel, yama, content, callback) {
 						encodeURIComponent(filedata.channels[scroller].name) +
 						"/send/" +
 						encodeURIComponent(content),
-					method: "POST",
 					agent: false,
 					pool: {
 						maxSockets: Infinity
@@ -539,7 +538,7 @@ function sendMessage(user, channel, yama, content, callback) {
 }
 
 function getMessages(channel_full, callback) {
-	var channel = channel_full.name;
+	let channel = channel_full.name;
 	if (channel_full.mode == undefined) {
 		if (buffer[channel] == undefined)
 			buffer[channel] = {};
@@ -579,15 +578,14 @@ function getMessages(channel_full, callback) {
 					/*todo*/
 				}
 				if (html !== undefined) {
-					body_edit = html.split("\r\n");
-					s = [];
-					var prev = "";
-					for (var i = 0; i < body_edit.length - 1; i++) {
+					let body_edit = html.split("\r\n");
+					let s = [];
+					for (let i = 0; i < body_edit.length - 1; i++) {
 						try {
-							json = JSON.parse(
+							let json = JSON.parse(
 								convert.xml2json(body_edit[i], { compact: true, spaces: 4 })
 							);
-						} catch(err) {
+						} catch (err2) {
 							throw body_edit[i];
 						}
 						s.push({
@@ -607,8 +605,8 @@ function getMessages(channel_full, callback) {
 }
 
 function timeConverter(UNIX_timestamp) {
-	var a = new Date(UNIX_timestamp);
-	var months = [
+	let a = new Date(UNIX_timestamp);
+	let months = [
 		"Jan",
 		"Feb",
 		"Mar",
@@ -622,13 +620,13 @@ function timeConverter(UNIX_timestamp) {
 		"Nov",
 		"Dec"
 	];
-	var year = a.getFullYear();
-	var month = months[a.getMonth()];
-	var date = a.getDate();
-	var hour = a.getHours();
-	var min = a.getMinutes();
-	var sec = a.getSeconds();
-	var time = {
+	let year = a.getFullYear();
+	let month = months[a.getMonth()];
+	let date = a.getDate();
+	let hour = a.getHours();
+	let min = a.getMinutes();
+	let sec = a.getSeconds();
+	let time = {
 		day: date + " " + month + " " + year,
 		time:
 			(hour < 10 ? "0" + hour : hour) +
@@ -640,7 +638,7 @@ function timeConverter(UNIX_timestamp) {
 	return time;
 }
 
-var count = 0;
+let count = 0;
 function refreshChat(channel_full, callback) {
 	if (channel_full.mode == "yamachat" && count < 5) {
 		count++;
@@ -648,20 +646,20 @@ function refreshChat(channel_full, callback) {
 		return;
 	}
 	count = 0;
-	var channel = channel_full.name;
+	let channel = channel_full.name;
 	getMessages(channel_full, res => {
-		var s = [];
+		let s = [];
 		res = JSON.parse(res);
 		res = res.reverse();
-		var prev = "";
-		for (var i = 0; i < res.length; i++) {
-			time_full = timeConverter(res[i].timestamp);
+		let prev = "";
+		for (let i = 0; i < res.length; i++) {
+			let time_full = timeConverter(res[i].timestamp);
 			if (prev != time_full.day) {
 				prev = time_full.day;
 				s.push("{" + filedata.colors.background + "-fg}{" + filedata.colors.foreground + "-bg}{bold}\t" + prev);
 			}
 
-			var message = (channel_full.key == undefined
+			let message = (channel_full.key == undefined
 				? decodeURIComponent(res[i].content)
 				: decrypt(decodeURIComponent(res[i].content), channel_full.key));
 
@@ -669,11 +667,11 @@ function refreshChat(channel_full, callback) {
 				message = message.substr(0, message.length - 1);
 
 			if (message.includes("`")) {
-				var prior = "";
-				var current = "";
-				var mode = true;
+				let prior = "";
+				let current = "";
+				let mode = true;
 
-				for (var j = 0; j < message.length; j++) {
+				for (let j = 0; j < message.length; j++) {
 					if (mode) {
 						if (message.charAt(j) == '`') {
 							mode = false;
@@ -707,15 +705,15 @@ function refreshChat(channel_full, callback) {
 				message
 			);
 		}
-		text = s.join("\n");
+		let text = s.join("\n");
 		buffer[channel + (channel_full.mode == "yamachat" ? ".yc" : "")].content = text;
 		if (callback) callback();
 	});
 }
 
-var sending = false;
-var run;
-var run_buffer;
+let sending = false;
+let run;
+let run_buffer;
 
 function checkUser() {
 	if (filedata.userdata == undefined) {
@@ -805,7 +803,7 @@ function startClient() {
 		screen.render();
 	});
 
-	var big = false;
+	let big = false;
 
 	textstuff.key(filedata.keybinds["toggle-editor"], function (ch, key) {
 		if (big) {
@@ -976,7 +974,7 @@ function startClient() {
 				sending = true;
 				textstuff.style.bg = "red";
 				textstuff.render();
-				var message = textstuff.getValue();
+				let message = textstuff.getValue();
 				if (filedata.channels[scroller].key !== undefined)
 					message = encrypt(message, filedata.channels[scroller].key);
 				sendMessage(
