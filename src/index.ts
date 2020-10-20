@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import * as blessed from "blessed";
 import * as fs from "fs";
 import * as crypto from "crypto";
