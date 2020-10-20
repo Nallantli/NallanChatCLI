@@ -585,17 +585,17 @@ function getMessages(channel_full, callback) {
 							let json = JSON.parse(
 								convert.xml2json(body_edit[i], { compact: true, spaces: 4 })
 							);
+							s.push({
+								user: {
+									user: json["div"]["_attributes"]["data-username"],
+									color: "#" + json["div"]["_attributes"]["data-colour"]
+								},
+								content: json.div._text,
+								timestamp: json["div"]["_attributes"]["data-timestamp"]
+							});
 						} catch (err2) {
 							throw body_edit[i];
 						}
-						s.push({
-							user: {
-								user: json["div"]["_attributes"]["data-username"],
-								color: "#" + json["div"]["_attributes"]["data-colour"]
-							},
-							content: json.div._text,
-							timestamp: json["div"]["_attributes"]["data-timestamp"]
-						});
 					}
 					callback(JSON.stringify(s));
 				}
