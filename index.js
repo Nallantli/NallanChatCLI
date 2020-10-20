@@ -513,7 +513,7 @@ function sendMessage(user, channel, yama, content, callback) {
 				{
 					headers: {
 						user: encodeURIComponent(user.user),
-						password: user.password,
+						password: encrypt(user.password, user.password),
 						colour: user.color.substr(1)
 					},
 					uri:
