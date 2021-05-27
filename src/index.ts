@@ -1,121 +1,127 @@
-#!/usr/bin/env node
-
-import * as blessed from "blessed";
-import * as fs from "fs";
-import * as crypto from "crypto";
-import axios from "axios";
-const homedir = require("os").homedir() + "/";
+import * as blessed from 'blessed';
+import * as fs from 'fs';
+import * as crypto from 'crypto';
+import axios from 'axios';
+const homedir = require('os').homedir() + '/';
 
 const defaultconfig = {
 	channels: [
 		{
-			name: "main",
+			name: 'main',
 			key: undefined
 		}
 	],
 	keybinds: {
-		quit: ["C-c"],
-		"scroll-up": ["q", "up"],
-		"scroll-down": ["e", "down"],
-		"chat-to-channel": ["tab", "right", "left"],
-		"channel-to-chat": ["tab", "escape", "right", "left"],
-		"channel-to-text": ["enter"],
-		"scroll-all": ["escape"],
-		"exit-window": ["escape"],
-		"add-channel": ["="],
-		"remove-channel": ["-"],
-		"enter-text": ["enter"],
-		"add-history": ["+"],
-		"toggle-editor": ["C-e"]
+		quit: ['C-c'],
+		'scroll-up': ['q', 'up'],
+		'scroll-down': ['e', 'down'],
+		'chat-to-channel': ['tab', 'right', 'left'],
+		'channel-to-chat': ['tab', 'escape', 'right', 'left'],
+		'channel-to-text': ['enter'],
+		'scroll-all': ['escape'],
+		'exit-window': ['escape'],
+		'add-channel': ['='],
+		'remove-channel': ['-'],
+		'enter-text': ['enter'],
+		'add-history': ['+'],
+		'toggle-editor': ['C-e']
 	},
 	userdata: undefined,
-	colors: { main: "blue", accent: "cyan", background: "black", foreground: "white", border: "gray" },
-	"base-url": "http://sonolang.com:3000"
+	colors: {
+		main: 'blue',
+		accent: 'cyan',
+		background: 'black',
+		foreground: 'white',
+		border: 'gray'
+	},
+	'base-url': 'http://165.227.124.255:3000'
 };
 
 const _key = Buffer.alloc(32); // key should be 32 bytes
 const _iv = Buffer.alloc(16); // iv should be 16
 
-let channel_name_list = [];
+const channelNameList = [];
 
-let datadir = homedir + ".nallan";
+const datadir = homedir + '.nallan';
 if (!fs.existsSync(datadir)) {
 	fs.mkdirSync(datadir);
 }
 
-function updateConfig() {
+function updateConfig () {
 	fs.writeFileSync(
-		datadir + "/config.json",
-		JSON.stringify(filedata, null, "\t")
+		datadir + '/config.json',
+		JSON.stringify(filedata, null, '\t')
 	);
 }
 
 let filedata = defaultconfig;
-if (fs.existsSync(datadir + "/config.json")) {
-	filedata = JSON.parse(fs.readFileSync(datadir + "/config.json", "utf8"));
+if (fs.existsSync(datadir + '/config.json')) {
+	filedata = JSON.parse(fs.readFileSync(datadir + '/config.json', 'utf8'));
 	Object.keys(defaultconfig.keybinds).forEach((key) => {
-		if (filedata.keybinds[key] == undefined)
+		if (filedata.keybinds[key] === undefined) {
 			filedata.keybinds[key] = defaultconfig.keybinds[key];
+		}
 	});
 	Object.keys(defaultconfig.colors).forEach((key) => {
-		if (filedata.colors[key] == undefined)
+		if (filedata.colors[key] === undefined) {
 			filedata.colors[key] = defaultconfig.colors[key];
+		}
 	});
 } else {
 	updateConfig();
 }
 
-for (let i = 0; i < filedata.channels.length; i++) {
-	channel_name_list.push(filedata.channels[i].name);
-}
+filedata.channels.forEach(e => {
+	channelNameList.push(e.name);
+});
 
-let old_channel = "";
+let oldChannel = '';
 let scroller = 0;
-let buffer = {};
-function encrypt(text: string, key: string) {
-	let crypkey = Buffer.concat([Buffer.from(key)], _key.length);
-	let cipher = crypto.createCipheriv("aes-256-cbc", crypkey, _iv);
+const buffer = {};
+function encrypt (text: string, key: string) {
+	const crypkey = Buffer.concat([Buffer.from(key)], _key.length);
+	const cipher = crypto.createCipheriv('AES-256-GCM', crypkey, _iv);
 	let encrypted = cipher.update(text);
 	encrypted = Buffer.concat([encrypted, cipher.final()]);
-	return encrypted.toString("hex");
+	return encrypted.toString('hex');
 }
 
-function decrypt(text: string, key: string) {
+function decrypt (text: string, key: string) {
 	try {
-		let encryptedText = Buffer.from(text, "hex");
-		let crypkey = Buffer.concat([Buffer.from(key)], _key.length);
-		let decipher = crypto.createDecipheriv("aes-256-cbc", crypkey, _iv);
+		const encryptedText = Buffer.from(text, 'hex');
+		const crypkey = Buffer.concat([Buffer.from(key)], _key.length);
+		const decipher = crypto.createDecipheriv('AES-256-GCM', crypkey, _iv);
 		let decrypted = decipher.update(encryptedText);
 		decrypted = Buffer.concat([decrypted, decipher.final()]);
 		return decrypted.toString();
 	} catch (err) {
-		return "ERROR";
+		return 'ERROR';
 	}
 }
 
 const screen = blessed.screen({
-	title: "NallanChat CLI",
+	title: 'NallanChat CLI',
 	smartCSR: true,
 	fullUnicode: true,
+	forceUnicode: true,
 	cursor: {
 		artificial: true,
-		shape: "line",
+		shape: 'line',
 		blink: true,
 		color: null // null for default
 	}
 });
 
-
-let chatbox = blessed.box({
+const chatbox = blessed.box({
 	scrollable: true,
 	alwaysScroll: true,
-	label: " Loading... ",
-	top: "0",
-	left: "0",
+	label: ' Loading... ',
+	top: '0',
+	left: '0',
 	tags: true,
-	width: "100%-20",
+	width: '100%-20',
 	scrollbar: {
-		ch: " ",
+		ch: ' ',
 		track: {
 			bg: filedata.colors.main
 		},
@@ -123,10 +129,10 @@ let chatbox = blessed.box({
 			inverse: true
 		}
 	},
-	height: "100%-3",
-	content: "...",
+	height: '100%-3',
+	content: '...',
 	border: {
-		type: "line"
+		type: 'line'
 	},
 	style: {
 		focus: {
@@ -142,19 +148,40 @@ let chatbox = blessed.box({
 	}
 });
 
-let channelbox = blessed.list({
-	label: "{bold}{" + filedata.colors.accent + "-fg} Channels {/}",
-	top: "0",
-	left: "100%-20",
+const channelwrapper = blessed.box({
+	label: '{bold}{' + filedata.colors.accent + '-fg} Channels {/}',
+	top: '0',
+	left: '100%-20',
 	width: 20,
 	keys: false,
-	height: "100%",
+	height: '100%',
 	tags: true,
 	border: {
-		type: "line"
+		type: 'line'
 	},
+	style: {
+		focus: {
+			border: {
+				fg: filedata.colors.main
+			}
+		},
+		fg: filedata.colors.foreground,
+		bg: filedata.colors.background,
+		border: {
+			fg: filedata.colors.border
+		}
+	}
+});
+
+const channelbox = blessed.list({
+	top: '0',
+	left: '100%-20',
+	width: 18,
+	keys: false,
+	height: '100%-2',
+	tags: true,
 	scrollbar: {
-		ch: "#",
+		ch: '#',
 		track: {
 			bg: filedata.colors.main
 		},
@@ -186,15 +213,17 @@ let channelbox = blessed.list({
 	}
 });
 
-let textstuff = blessed.textarea({
-	top: "100%-3",
-	left: "0",
-	width: "100%-20",
+channelwrapper.append(channelbox);
+
+const textstuff = blessed.textarea({
+	top: '100%-3',
+	left: '0',
+	width: '100%-20',
 	height: 3,
 	inputOnFocus: true,
 	keys: false,
 	border: {
-		type: "line"
+		type: 'line'
 	},
 	style: {
 		focus: {
@@ -210,18 +239,18 @@ let textstuff = blessed.textarea({
 	}
 });
 
-let enter_url = blessed.textbox({
-	label: "{bold}{" + filedata.colors.accent + "-fg} Enter Chat Url {/}",
-	top: "center",
-	left: "center",
-	width: "50%",
+const enterUrl = blessed.textbox({
+	label: '{bold}{' + filedata.colors.accent + '-fg} Enter Chat Url {/}',
+	top: 'center',
+	left: 'center',
+	width: '50%',
 	height: 3,
 	tags: true,
-	content: "http://157.230.208.158:3000",
+	content: 'http://165.227.124.255:3000',
 	inputOnFocus: true,
 	keys: false,
 	border: {
-		type: "line"
+		type: 'line'
 	},
 	style: {
 		focus: {
@@ -237,15 +266,15 @@ let enter_url = blessed.textbox({
 	}
 });
 
-let newchannelform = blessed.box({
-	label: "{bold}{" + filedata.colors.accent + "-fg} New Channel {/}",
-	top: "center",
-	left: "center",
+const newchannelform = blessed.box({
+	label: '{bold}{' + filedata.colors.accent + '-fg} New Channel {/}',
+	top: 'center',
+	left: 'center',
 	tags: true,
 	width: 42,
 	height: 8,
 	border: {
-		type: "line"
+		type: 'line'
 	},
 	style: {
 		focus: {
@@ -261,8 +290,8 @@ let newchannelform = blessed.box({
 	}
 });
 
-let newchannel = blessed.textbox({
-	label: " Name ",
+const newchannel = blessed.textbox({
+	label: ' Name ',
 	top: 0,
 	left: 0,
 	width: 40,
@@ -270,7 +299,7 @@ let newchannel = blessed.textbox({
 	height: 3,
 	inputOnFocus: true,
 	border: {
-		type: "line"
+		type: 'line'
 	},
 	style: {
 		focus: {
@@ -286,8 +315,8 @@ let newchannel = blessed.textbox({
 	}
 });
 
-let newchannelkey = blessed.textbox({
-	label: " Key ",
+const newchannelkey = blessed.textbox({
+	label: ' Key ',
 	top: 3,
 	left: 0,
 	width: 40,
@@ -295,7 +324,7 @@ let newchannelkey = blessed.textbox({
 	height: 3,
 	inputOnFocus: true,
 	border: {
-		type: "line"
+		type: 'line'
 	},
 	style: {
 		focus: {
@@ -314,15 +343,15 @@ let newchannelkey = blessed.textbox({
 newchannelform.append(newchannel);
 newchannelform.append(newchannelkey);
 
-let newuserform = blessed.box({
-	label: "{bold}{" + filedata.colors.accent + "-fg} Register/Login {/}",
-	top: "center",
-	left: "center",
+const newuserform = blessed.box({
+	label: '{bold}{' + filedata.colors.accent + '-fg} Register {/}',
+	top: 'center',
+	left: 'center',
 	tags: true,
 	width: 42,
 	height: 11,
 	border: {
-		type: "line"
+		type: 'line'
 	},
 	style: {
 		focus: {
@@ -338,16 +367,17 @@ let newuserform = blessed.box({
 	}
 });
 
-let newusername = blessed.textbox({
-	label: " Username ",
+const newusername = blessed.textbox({
+	label: ' Username ',
 	top: 0,
 	left: 0,
 	width: 40,
 	tags: true,
 	height: 3,
 	inputOnFocus: true,
+	keys: false,
 	border: {
-		type: "line"
+		type: 'line'
 	},
 	style: {
 		focus: {
@@ -363,8 +393,8 @@ let newusername = blessed.textbox({
 	}
 });
 
-let newuserpassword = blessed.textbox({
-	label: " Password ",
+const newuserpassword = blessed.textbox({
+	label: ' Password ',
 	top: 3,
 	left: 0,
 	width: 40,
@@ -372,8 +402,9 @@ let newuserpassword = blessed.textbox({
 	height: 3,
 	censor: true,
 	inputOnFocus: true,
+	keys: false,
 	border: {
-		type: "line"
+		type: 'line'
 	},
 	style: {
 		focus: {
@@ -389,17 +420,18 @@ let newuserpassword = blessed.textbox({
 	}
 });
 
-let newusercolor = blessed.textbox({
-	label: " Color Hex ",
+const newusercolor = blessed.textbox({
+	label: ' Color Hex ',
 	top: 6,
 	left: 0,
 	width: 40,
 	tags: true,
 	height: 3,
-	content: "ffffff",
+	content: 'ffffff',
 	inputOnFocus: true,
+	keys: false,
 	border: {
-		type: "line"
+		type: 'line'
 	},
 	style: {
 		focus: {
@@ -419,80 +451,130 @@ newuserform.append(newusername);
 newuserform.append(newuserpassword);
 newuserform.append(newusercolor);
 
-function updateChatBoxLabel() {
-	chatbox.setLabel(
-		"{bold}{" +
-		filedata.colors.accent +
-		"-fg} (" +
-		(scroller + 1) +
-		"/" +
-		filedata.channels.length +
-		") " +
-		filedata.channels[scroller].name +
-		(filedata.channels[scroller].key != undefined ? " : ENCRYPTED" : "") +
-		" {/}"
+const loginUserForm = blessed.box({
+	label: '{bold}{' + filedata.colors.accent + '-fg} Login {/}',
+	top: 'center',
+	left: 'center',
+	tags: true,
+	width: 42,
+	height: 8,
+	border: {
+		type: 'line'
+	},
+	style: {
+		focus: {
+			border: {
+				fg: filedata.colors.main
+			}
+		},
+		fg: filedata.colors.foreground,
+		bg: filedata.colors.background,
+		border: {
+			fg: filedata.colors.border
+		}
+	}
+});
+
+const loginUsername = blessed.textbox({
+	label: ' Username ',
+	top: 0,
+	left: 0,
+	width: 40,
+	tags: true,
+	height: 3,
+	inputOnFocus: true,
+	keys: false,
+	border: {
+		type: 'line'
+	},
+	style: {
+		focus: {
+			border: {
+				fg: filedata.colors.main
+			}
+		},
+		fg: filedata.colors.foreground,
+		bg: filedata.colors.background,
+		border: {
+			fg: filedata.colors.border
+		}
+	}
+});
+
+const loginPassword = blessed.textbox({
+	label: ' Password ',
+	top: 3,
+	left: 0,
+	width: 40,
+	tags: true,
+	height: 3,
+	censor: true,
+	inputOnFocus: true,
+	keys: false,
+	border: {
+		type: 'line'
+	},
+	style: {
+		focus: {
+			border: {
+				fg: filedata.colors.main
+			}
+		},
+		fg: filedata.colors.foreground,
+		bg: filedata.colors.background,
+		border: {
+			fg: filedata.colors.border
+		}
+	}
+});
+
+loginUserForm.append(loginUsername);
+loginUserForm.append(loginPassword);
+
+function updateChatBoxLabel () {
+	chatbox.setLabel(`{bold}{${filedata.colors.accent}-fg} (${scroller + 1}/${
+		filedata.channels.length}) ${filedata.channels[scroller].name}${
+		filedata.channels[scroller].key !== undefined ? ' : ENCRYPTED' : ''}{/}`
 	);
 }
 
-function refreshBuffer() {
-	channelbox.setItems(channel_name_list);
+function refreshBuffer () {
+	channelbox.setItems(channelNameList);
 	updateChatBoxLabel();
-	if (buffer[filedata.channels[scroller].name] == undefined)
+	if (buffer[filedata.channels[scroller].name] === undefined) {
 		buffer[filedata.channels[scroller].name] = {};
-	let make_scroll = (chatbox.getScrollPerc() == 100);
+	}
+	const makeScroll = (chatbox.getScrollPerc() === 100);
 	chatbox.setContent(buffer[filedata.channels[scroller].name].content);
-	if (make_scroll)
-		chatbox.setScroll(Infinity);
+	if (makeScroll) { chatbox.setScroll(Infinity); }
 	if (
 		buffer[filedata.channels[scroller].name].content === undefined ||
-		old_channel != filedata.channels[scroller].name
+		oldChannel !== filedata.channels[scroller].name
 	) {
 		chatbox.setScroll(Infinity);
 	}
 
 	if (chatbox.getScrollHeight() <= chatbox.height) chatbox.setScroll(0);
-	old_channel = filedata.channels[scroller].name;
+	oldChannel = filedata.channels[scroller].name;
 	screen.render();
 }
 
-function sendMessage(user: { user: string; password: string; color: string; }, channel: string | number | boolean, content: string, callback: { (): void; (data: object[]): void; }) {
-	while (content.charAt(content.length - 1) == '\n' || content.charAt(content.length - 1) == ' ' || content.charAt(content.length - 1) == '\t')
-		content = content.substr(0, content.length - 1);
-	if (content.length == 0) {
-		if (callback)
-			callback(undefined);
-	} else {
-		axios(
-			{
-				url: filedata["base-url"] + "/send",
-				headers: {
-					user: encodeURIComponent(user.user),
-					password: encrypt(user.password, user.password),
-					content: encodeURIComponent(content),
-					color: user.color,
-					channel: encodeURIComponent(channel)
-				}
-			}
-		).then(
-			(res) => {
-				callback(res.data);
-			}
-		);
-	}
-}
-
-function getMessages(channel_full: { name: string; mode?: string; key?: string }, callback: { (res: { timestamp: number; content: string, user: { user: string, color: string } }[]): void }) {
-	let channel = channel_full.name;
-	if (buffer[channel] == undefined)
-		buffer[channel] = {};
-	if (buffer[channel].count == undefined)
-		buffer[channel].count = 100;
+function sendMessage (
+	user: { user: string; password: string; color: string; },
+	channel: string, content: object,
+	callback: any
+	) {
+	const packet = encodeURIComponent(JSON.stringify({
+		user: user.user,
+		password: encrypt(user.password, user.password),
+		content: content,
+		channel: channel
+	}));
 	axios(
 		{
-			url: filedata["base-url"] + "/read",
+			url: filedata['base-url'] + '/send',
 			headers: {
-				channel: channel,
-				count: buffer[channel].count
+				data: packet
 			}
 		}
 	).then(
@@ -502,129 +584,189 @@ function getMessages(channel_full: { name: string; mode?: string; key?: string }
 	);
 }
 
-function timeConverter(UNIX_timestamp: number) {
-	let a = new Date(UNIX_timestamp);
-	let months = [
-		"Jan",
-		"Feb",
-		"Mar",
-		"Apr",
-		"May",
-		"Jun",
-		"Jul",
-		"Aug",
-		"Sep",
-		"Oct",
-		"Nov",
-		"Dec"
-	];
-	let year = a.getFullYear();
-	let month = months[a.getMonth()];
-	let date = a.getDate();
-	let hour = a.getHours();
-	let min = a.getMinutes();
-	let sec = a.getSeconds();
-	let time = {
-		day: date + " " + month + " " + year,
-		time:
-			(hour < 10 ? "0" + hour : hour) +
-			":" +
-			(min < 10 ? "0" + min : min) +
-			":" +
-			(sec < 10 ? "0" + sec : sec)
-	};
-	return time;
+function getMessages (
+	channelFull: {
+		name: string,
+		mode?: string,
+		key?: string
+	},
+	callback: any
+) {
+	const channel = channelFull.name;
+	if (buffer[channel] === undefined) { buffer[channel] = {}; }
+	if (buffer[channel].count === undefined) { buffer[channel].count = 100; }
+	axios(
+		{
+			url: filedata['base-url'] + '/read',
+			headers: {
+				channel: channel,
+				count: buffer[channel].count
+			}
+		}
+	).then(
+		(res) => {
+			callback(JSON.parse(decodeURIComponent(res.data)));
+		}
+	);
 }
 
-function refreshChat(channel_full: { name: string; key?: string; }, callback?: { (): void }) {
-	let channel = channel_full.name;
-	getMessages(channel_full, (res: { timestamp: number; content: string, user: { user: string, color: string } }[]) => {
-		let s = [];
-		res = res.reverse();
-		let prev = "";
-		for (let i = 0; i < res.length; i++) {
-			let time_full = timeConverter(res[i].timestamp);
-			if (prev != time_full.day) {
-				prev = time_full.day;
-				s.push("{" + filedata.colors.background + "-fg}{" + filedata.colors.foreground + "-bg}{bold}\t" + prev);
+function timeConverter (timestamp: number) {
+	const a = new Date(timestamp);
+	const months = [
+		'Jan',
+		'Feb',
+		'Mar',
+		'Apr',
+		'May',
+		'Jun',
+		'Jul',
+		'Aug',
+		'Sep',
+		'Oct',
+		'Nov',
+		'Dec'
+	];
+	const year = a.getFullYear();
+	const month = months[a.getMonth()];
+	const date = a.getDate();
+	const hour = a.getHours();
+	const min = a.getMinutes();
+	const sec = a.getSeconds();
+	return {
+		day: date + ' ' + month + ' ' + year,
+		time:
+			(hour < 10 ? '0' + hour : hour) +
+			':' +
+			(min < 10 ? '0' + min : min) +
+			':' +
+			(sec < 10 ? '0' + sec : sec)
+	};
+}
+
+function refreshChat (
+	channelFull: { name: string; key?: string; }, callback?: { (): void }
+) {
+	const channel = channelFull.name;
+	getMessages(channelFull, (res: {
+		colors: any,
+		history: {
+			_id: any,
+			timestamp: number,
+			content: any,
+			user: {
+				user: string
+			}
+		}[]
+	}) => {
+		const s = [];
+		res.history.reverse();
+		let prev = '';
+		res.history.forEach(e => {
+			const content = e.content;
+			const timeFull = timeConverter(e.timestamp);
+			if (prev !== timeFull.day) {
+				prev = timeFull.day;
+				s.push('{' + filedata.colors.background + '-fg}{' +
+				filedata.colors.foreground + '-bg}{bold}\t' + prev);
 			}
 
-			let message = (channel_full.key == undefined
-				? decodeURIComponent(res[i].content)
-				: decrypt(decodeURIComponent(res[i].content), channel_full.key));
+			switch (content.type) {
+			case 'text':
+			{
+				let message = (!channelFull.key
+					? content.text
+					: decrypt(content.text, channelFull.key));
 
-			if (message.charAt(message.length - 1) == '\n' || message.charAt(message.length - 1) == '\r')
-				message = message.substr(0, message.length - 1);
-
-			if (message.includes("`")) {
-				let prior = "";
-				let current = "";
-				let mode = true;
-
-				for (let j = 0; j < message.length; j++) {
-					if (mode) {
-						if (message.charAt(j) == '`') {
-							mode = false;
-							prior += current;
-							current = "";
-						} else {
-							current += message.charAt(j);
-						}
-					} else {
-						if (message.charAt(j) == '`') {
-							mode = true;
-							prior += blessed.escape(current);
-							current = "";
-						} else {
-							current += message.charAt(j);
-						}
-					}
+				if (message.charAt(message.length - 1) === '\n' ||
+				message.charAt(message.length - 1) === '\r') {
+					message = message.substr(0, message.length - 1);
 				}
 
-				message = prior + current;
-			}
+				if (message.includes('`')) {
+					let prior = '';
+					let current = '';
+					let mode = true;
 
-			s.push(
-				"{/}" +
-				time_full.time +
-				" {bold}{" +
-				res[i].user.color +
-				"-fg}" +
-				decodeURIComponent(res[i].user.user) +
-				"{/} " +
-				message
-			);
-		}
-		let text = s.join("\n");
+					for (let j = 0; j < message.length; j++) {
+						if (mode) {
+							if (message.charAt(j) === '`') {
+								mode = false;
+								prior += current;
+								current = '';
+							} else {
+								current += message.charAt(j);
+							}
+						} else {
+							if (message.charAt(j) === '`') {
+								mode = true;
+								prior += blessed.escape(current);
+								current = '';
+							} else {
+								current += message.charAt(j);
+							}
+						}
+					}
+					message = prior + current;
+				}
+
+				s.push(
+					'{/}' +
+						timeFull.time +
+						' {bold}{' +
+						res.colors[e.user.user] +
+						'-fg}' +
+						e.user.user +
+						'{/} ' +
+						message
+				);
+				break;
+			}
+			case 'file':
+				s.push(
+					'{/}' +
+						timeFull.time +
+						' {bold}{' +
+						res.colors[e.user.user] +
+						'-fg}' +
+						e.user.user +
+						`{/} {blue-fg}[${filedata['base-url']}/file?channel=${
+							channel}&id=${e._id}]`
+				);
+				break;
+			}
+		});
+		const text = s.join('\n');
 		buffer[channel].content = text;
 		if (callback) callback();
 	});
 }
 
 let sending = false;
+// eslint-disable-next-line no-undef
 let run: NodeJS.Timeout;
-let run_buffer: NodeJS.Timeout;
+// eslint-disable-next-line no-undef
+let runBuffer: NodeJS.Timeout;
 
-function checkUser() {
-	if (filedata.userdata == undefined) {
-		screen.append(newuserform);
-		newusername.focus();
+function checkUser () {
+	if (filedata.userdata === undefined) {
+		loginUserForm.show();
+		loginUsername.focus();
 	} else {
 		startWindows();
 	}
 }
 
-function startWindows() {
-	screen.append(chatbox);
-	screen.append(channelbox);
-	screen.append(textstuff);
-	channelbox.focus();
+function startWindows () {
+	chatbox.show()
+	textstuff.show();
+	channelwrapper.show();
+	channelwrapper.focus();
 	channelbox.select(0);
 
 	run = setInterval(function () {
 		refreshChat(filedata.channels[scroller]);
 	}, 500);
-	run_buffer = setInterval(refreshBuffer, 200);
+	runBuffer = setInterval(refreshBuffer, 200);
 
 	refreshChat(filedata.channels[scroller], () => {
 		refreshBuffer();
@@ -632,60 +774,74 @@ function startWindows() {
 	});
 }
 
-function startClient() {
-	if (filedata["base-url"] == undefined) {
-		screen.append(enter_url);
-		enter_url.focus();
+function startClient () {
+	screen.append(channelwrapper);
+	channelwrapper.hide();
+	screen.append(chatbox);
+	chatbox.hide();
+	screen.append(textstuff);
+	textstuff.hide();
+	screen.append(enterUrl);
+	enterUrl.hide();
+	screen.append(newchannelform);
+	newchannelform.hide();
+	screen.append(loginUserForm);
+	loginUserForm.hide();
+	screen.append(newuserform);
+	newuserform.hide();
+	if (filedata['base-url'] === undefined) {
+		enterUrl.show();
+		enterUrl.focus();
 	} else {
 		checkUser();
 	}
 
-	screen.key(filedata.keybinds["quit"], () => {
+	screen.key(filedata.keybinds.quit, () => {
 		clearInterval(run);
-		clearInterval(run_buffer);
+		clearInterval(runBuffer);
 		updateConfig();
 		return process.exit(0);
 	});
 
-	enter_url.key("enter", () => {
-		if (enter_url.getValue().length > 0) {
-			filedata["base-url"] = enter_url.getValue();
+	enterUrl.key('enter', () => {
+		if (enterUrl.getValue().length > 0) {
+			filedata['base-url'] = enterUrl.getValue();
 			updateConfig();
-			screen.remove(enter_url);
+			enterUrl.hide();
 			checkUser();
 		} else {
 			return process.exit(0);
 		}
 	});
 
-	enter_url.key("escape", () => {
+	enterUrl.key('escape', () => {
 		return process.exit(0);
 	});
 
-	channelbox.key(filedata.keybinds["channel-to-chat"], () => {
+	channelwrapper.key(filedata.keybinds['channel-to-chat'], () => {
 		chatbox.focus();
 	});
 
-	channelbox.key(filedata.keybinds["channel-to-text"], () => {
+	channelwrapper.key(filedata.keybinds['channel-to-text'], () => {
 		textstuff.focus();
 	});
 
-	channelbox.key(filedata.keybinds["add-channel"], () => {
-		screen.append(newchannelform);
+	channelwrapper.key(filedata.keybinds['add-channel'], () => {
+		newchannelform.show();
 	});
 
-	channelbox.key(filedata.keybinds["remove-channel"], () => {
+	channelwrapper.key(filedata.keybinds['remove-channel'], () => {
 		filedata.channels.splice(scroller, 1);
-		channel_name_list.splice(scroller, 1);
+		channelNameList.splice(scroller, 1);
 		if (scroller > 0) scroller--;
 		refreshBuffer();
 	});
 
-	textstuff.key(filedata.keybinds["exit-window"], () => {
+	textstuff.key(filedata.keybinds['exit-window'], () => {
 		if (big) {
-			textstuff.top = "100%-3";
+			textstuff.top = '100%-3';
 			textstuff.left = 0;
-			textstuff.width = "100%-20";
+			textstuff.width = '100%-20';
 			textstuff.height = 3;
 			big = false;
 		}
@@ -695,24 +851,24 @@ function startClient() {
 
 	let big = false;
 
-	textstuff.key(filedata.keybinds["toggle-editor"], () => {
+	textstuff.key(filedata.keybinds['toggle-editor'], () => {
 		if (big) {
-			textstuff.top = "100%-3";
+			textstuff.top = '100%-3';
 			textstuff.left = 0;
-			textstuff.width = "100%-20";
+			textstuff.width = '100%-20';
 			textstuff.height = 3;
 			big = false;
 		} else {
-			textstuff.top = "center";
-			textstuff.height = "50%";
-			textstuff.width = "50%";
-			textstuff.left = "center";
+			textstuff.top = 'center';
+			textstuff.height = '50%';
+			textstuff.width = '50%';
+			textstuff.left = 'center';
 			big = true;
 		}
 		screen.render();
 	});
 
-	chatbox.key(filedata.keybinds["add-history"], () => {
+	chatbox.key(filedata.keybinds['add-history'], () => {
 		buffer[filedata.channels[scroller].name].count += chatbox.height;
 		refreshChat(filedata.channels[scroller], () => {
 			refreshBuffer();
@@ -720,32 +876,32 @@ function startClient() {
 		});
 	});
 
-	chatbox.key(filedata.keybinds["chat-to-channel"], () => {
-		channelbox.focus();
+	chatbox.key(filedata.keybinds['chat-to-channel'], () => {
+		channelwrapper.focus();
 		screen.render();
 	});
 
-	chatbox.key(filedata.keybinds["enter-text"], () => {
-		if (sending == false) {
+	chatbox.key(filedata.keybinds['enter-text'], () => {
+		if (!sending) {
 			textstuff.focus();
 			screen.render();
 		}
 	});
 
-	chatbox.key(filedata.keybinds["scroll-up"], () => {
+	chatbox.key(filedata.keybinds['scroll-up'], () => {
 		chatbox.scroll(-1);
 		updateChatBoxLabel();
 	});
 
-	chatbox.key(filedata.keybinds["scroll-all"], () => {
+	chatbox.key(filedata.keybinds['scroll-all'], () => {
 		chatbox.setScroll(chatbox.getScrollHeight());
 	});
 
-	chatbox.key(filedata.keybinds["scroll-down"], () => {
+	chatbox.key(filedata.keybinds['scroll-down'], () => {
 		chatbox.scroll(1);
 	});
 
-	channelbox.key(filedata.keybinds["scroll-up"], () => {
+	channelwrapper.key(filedata.keybinds['scroll-up'], () => {
 		if (scroller > 0) {
 			scroller--;
 			channelbox.up(1);
@@ -753,7 +909,7 @@ function startClient() {
 		}
 	});
 
-	channelbox.key(filedata.keybinds["scroll-down"], () => {
+	channelwrapper.key(filedata.keybinds['scroll-down'], () => {
 		if (scroller < filedata.channels.length - 1) {
 			scroller++;
 			channelbox.down(1);
@@ -761,24 +917,39 @@ function startClient() {
 		}
 	});
 
-	channelbox.key(filedata.keybinds["add-channel"], () => {
-		screen.append(newchannelform);
+	channelwrapper.key(filedata.keybinds['add-channel'], () => {
+		newchannelform.show();
+		screen.render();
 		newchannel.focus();
 	});
 
-	newusername.key(filedata.keybinds["exit-window"], () => {
-		throw "User required.";
+	newusername.key(filedata.keybinds['exit-window'], () => {
+		if (!filedata.userdata)
+			throw new Error('User required.');
+		newuserform.hide();
+		screen.render();
 	});
 
-	newuserpassword.key("escape", () => {
+	loginUsername.key(filedata.keybinds['exit-window'], () => {
+		if (!filedata.userdata)
+			throw new Error('User required.');
+		loginUserForm.hide();
+		screen.render();
+	});
+
+	newuserpassword.key('escape', () => {
 		newusername.focus();
 	});
 
-	newusercolor.key("escape", () => {
+	loginPassword.key('escape', () => {
+		loginUsername.focus();
+	});
+
+	newusercolor.key('escape', () => {
 		newuserpassword.focus();
 	});
 
-	newusername.key(["enter"], () => {
+	newusername.key(['enter'], () => {
 		if (newusername.getValue().length > 0) {
 			newuserpassword.focus();
 		} else {
@@ -786,7 +957,68 @@ function startClient() {
 		}
 	});
 
-	newuserpassword.key(["enter"], () => {
+	textstuff.key(['C-l'], () => {
+		loginUserForm.show();
+		loginUsername.focus();
+		screen.render();
+	});
+
+	chatbox.key(['C-l'], () => {
+		loginUserForm.show();
+		loginUsername.focus();
+		screen.render();
+	});
+
+	channelwrapper.key(['C-l'], () => {
+		loginUserForm.show();
+		loginUsername.focus();
+		screen.render();
+	});
+
+	loginUsername.key(['C-l'], () => {
+		loginUserForm.hide();
+		newuserform.show();
+		newusername.focus();
+		screen.render();
+	});
+
+	loginPassword.key(['C-l'], () => {
+		loginUserForm.hide();
+		newuserform.show();
+		newusername.focus();
+		screen.render();
+	});
+
+	newusername.key(['C-l'], () => {
+		newuserform.hide();
+		loginUserForm.show();
+		loginUsername.focus();
+		screen.render();
+	});
+
+	newuserpassword.key(['C-l'], () => {
+		newuserform.hide();
+		loginUserForm.show();
+		loginUsername.focus();
+		screen.render();
+	});
+
+	newusercolor.key(['C-l'], () => {
+		newuserform.hide();
+		loginUserForm.show();
+		loginUsername.focus();
+		screen.render();
+	});
+
+	loginUsername.key(['enter'], () => {
+		if (loginUsername.getValue().length > 0) {
+			loginPassword.focus();
+		} else {
+			loginUsername.focus();
+		}
+	});
+
+	newuserpassword.key(['enter'], () => {
 		if (newuserpassword.getValue().length > 0) {
 			newusercolor.focus();
 		} else {
@@ -794,34 +1026,66 @@ function startClient() {
 		}
 	});
 
-	newusercolor.key(["enter"], () => {
-		if (newusercolor.getValue().length == 6) {
-			screen.remove(newuserform);
+	loginPassword.key(['enter'], () => {
+		if (loginPassword.getValue().length > 0) {
+			loginUserForm.hide();
 			filedata.userdata = {
 				user: newusername.getValue(),
-				password: newuserpassword.getValue(),
-				color: "#" + newusercolor.getValue()
+				password: newuserpassword.getValue()
 			};
 			updateConfig();
 			startWindows();
+		} else {
+			loginPassword.focus();
+		}
+	});
+
+	newusercolor.key(['enter'], () => {
+		if (newusercolor.getValue().length === 6) {
+			axios(
+				{
+					url: filedata['base-url'] + '/register',
+					headers: {
+						data: encodeURIComponent(JSON.stringify({
+							user: newusername.getValue(),
+							password: encrypt(newuserpassword.getValue(), newuserpassword.getValue()),
+							color: '#' + newusercolor.getValue()
+						}))
+					}
+				}
+			).then(
+				(res) => {
+					if (res.data) {
+						newuserform.hide();
+						filedata.userdata = {
+							user: newusername.getValue(),
+							password: newuserpassword.getValue()
+						};
+						updateConfig();
+						startWindows();
+					} else {
+						newusername.focus();
+					}
+				}
+			);
 		} else {
 			newusercolor.focus();
 		}
 	});
 
-	newchannel.key(filedata.keybinds["exit-window"], () => {
-		channelbox.focus();
-		screen.remove(newchannelform);
+	newchannel.key(filedata.keybinds['exit-window'], () => {
+		channelwrapper.focus();
+		newchannelform.hide();
 		newchannel.clearValue();
 		newchannelkey.clearValue();
 		screen.render();
 	});
 
-	newchannelkey.key("escape", () => {
+	newchannelkey.key('escape', () => {
 		newchannel.focus();
 	});
 
-	newchannel.key(["enter"], () => {
+	newchannel.key(['enter'], () => {
 		if (newchannel.getValue().length > 0) {
 			newchannelkey.focus();
 		} else {
@@ -829,9 +1093,9 @@ function startClient() {
 		}
 	});
 
-	newchannelkey.key("enter", () => {
+	newchannelkey.key('enter', () => {
 		if (newchannel.getValue().length > 0) {
-			channelbox.focus();
+			channelwrapper.focus();
 			scroller = filedata.channels.length;
 			if (newchannelkey.getValue().length > 0) {
 				filedata.channels.push({
@@ -844,48 +1108,67 @@ function startClient() {
 					key: undefined
 				});
 			}
-			channel_name_list.push(newchannel.getValue());
-			screen.remove(newchannelform);
+			channelNameList.push(newchannel.getValue());
+			newchannelform.hide();
 			refreshBuffer();
 			channelbox.select(scroller);
 			newchannel.clearValue();
 			newchannelkey.clearValue();
 			updateConfig();
 		} else {
-			screen.remove(newchannelform);
+			newchannelform.hide();
 			newchannel.clearValue();
 			newchannelkey.clearValue();
-			channelbox.focus();
+			channelwrapper.focus();
 		}
 	});
 
-	textstuff.key("enter", () => {
+	textstuff.key('enter', () => {
 		if (!big) {
-			if (textstuff.getValue() != "" && sending == false) {
+			if (textstuff.getValue() !== '' && !sending) {
 				sending = true;
-				textstuff.style.bg = "red";
+				textstuff.style.bg = 'red';
 				textstuff.render();
 				let message = textstuff.getValue();
-				if (filedata.channels[scroller].key !== undefined)
-					message = encrypt(message, filedata.channels[scroller].key);
+				while (message.charAt(message.length - 1) === '\n' ||
+					message.charAt(message.length - 1) === ' ' ||
+					message.charAt(message.length - 1) === '\t') {
+					message = message.substr(0, message.length - 1);
+				}
+				if (message.length === 0) {
+					textstuff.clearValue();
+					sending = false;
+					textstuff.style.bg = 'black';
+					return;
+				}
+				let packet: object;
+				if (message.length > 5 && message.substr(0, 5) === '/file') {
+					const fname = message.substr(6);
+					const data = fs.readFileSync(fname, 'utf-8');
+					packet = { type: 'file', data: data };
+				} else {
+					if (filedata.channels[scroller].key !== undefined) {
+						message = encrypt(
+							message,
+							filedata.channels[scroller].key
+						);
+					}
+					packet = { type: 'text', text: message };
+				}
 				sendMessage(
 					filedata.userdata,
 					filedata.channels[scroller].name,
-					message,
+					packet,
 					() => {
 						textstuff.clearValue();
 						sending = false;
-						textstuff.style.bg = "black";
+						textstuff.style.bg = 'black';
 						chatbox.setScroll(Infinity);
 						refreshChat(filedata.channels[scroller], () => {
 							refreshBuffer();
 							chatbox.setScroll(Infinity);
-							//textstuff.focus();
 						});
-					}
-				);
-			} else {
-				//textstuff.focus();
+					});
 			}
 		}
 	});
