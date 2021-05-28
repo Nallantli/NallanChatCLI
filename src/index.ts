@@ -957,12 +957,6 @@ function startClient () {
 		}
 	});
 
-	textstuff.key(['C-l'], () => {
-		loginUserForm.show();
-		loginUsername.focus();
-		screen.render();
-	});
-
 	chatbox.key(['C-l'], () => {
 		loginUserForm.show();
 		loginUsername.focus();
@@ -1030,8 +1024,8 @@ function startClient () {
 		if (loginPassword.getValue().length > 0) {
 			loginUserForm.hide();
 			filedata.userdata = {
-				user: newusername.getValue(),
-				password: newuserpassword.getValue()
+				user: loginUsername.getValue(),
+				password: loginPassword.getValue()
 			};
 			updateConfig();
 			startWindows();
